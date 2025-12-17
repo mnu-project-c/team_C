@@ -49,6 +49,15 @@ public class GamePanel extends JPanel implements Runnable {
     private boolean running = false;
     private final int FPS = 60;
     
+    // Shop
+    private Runnable shopOpener = null;
+    private boolean overlayPaused = false;
+    private GameButton shopButton;
+    // shop 오버레이 참조
+    private ShopOverlayPanel shopOverlay;
+
+
+
     // Managers
     private InputManager inputManager;
     private MouseHandler mouseHandler;
@@ -98,6 +107,47 @@ public class GamePanel extends JPanel implements Runnable {
     private int brickColorIndex = 2;
     
     private int currentLevel = 1;
+
+    // shop 오버레이용
+    public void setShopOpener(Runnable opener) {
+        this.shopOpener = opener;
+    }
+
+    public void setShopOverlay(ShopOverlayPanel overlay) {
+        this.shopOverlay = overlay;
+    }
+
+
+    public void pauseForOverlay() {
+        overlayPaused = true;
+    }
+
+    public void resumeFromOverlay() {
+        overlayPaused = false;
+    }
+
+    public int getScore() {
+        return score;
+    }
+
+    public void spendScore(int amount) {
+        score = Math.max(0, score - amount);
+    }
+
+    public void applyLongPaddleFromShop() {
+        paddle.expand();
+    }
+
+    public void applySlowBallFromShop() {
+        ball.slowDown();
+    }
+
+    public void addLifeFromShop() {
+        lives++;
+    }
+
+
+
 
     public GamePanel() {
         setPreferredSize(new Dimension(WIDTH, HEIGHT));
@@ -183,7 +233,9 @@ public class GamePanel extends JPanel implements Runnable {
         restartButton = new GameButton(centerX, 350, 200, 50, "TRY AGAIN");
         menuButton = new GameButton(centerX, 420, 200, 50, "MAIN MENU");
         resumeButton = new GameButton(centerX, 300, 200, 50, "RESUME");
-        
+        shopButton = new GameButton(centerX, 370, 200, 50, "SHOP");
+
+
         // 설정
         soundButton = new GameButton(centerX, 150, 200, 50, "SOUND: ON");
         prevBgButton = new GameButton(centerX - 110, 230, 100, 50, "<< BG");
@@ -276,11 +328,19 @@ public class GamePanel extends JPanel implements Runnable {
     }
     
     private void update() {
+
+        // ⭐ 상점 오버레이가 떠 있으면: 상점 버튼만 업데이트하고 게임 로직은 중단
+        if (shopOverlay != null && shopOverlay.isVisible()) {
+            inputManager.update();                  // (선택) ESC 같은 입력 갱신
+            shopOverlay.updateOverlay(mouseHandler); // BUY / BACK 클릭 처리
+            return;
+        }
+
         if (shakeTimer > 0) shakeTimer--;
 
         inputManager.update();
-        effectManager.update(); 
-        
+        effectManager.update();
+
         switch (gameState) {
             case STATE_MENU: updateMenu(); break;
             case STATE_LEVEL_SELECT: updateLevelSelect(); break;
@@ -292,6 +352,7 @@ public class GamePanel extends JPanel implements Runnable {
             case STATE_EDITOR: updateEditor(); break;
         }
     }
+    
     
     private void updateMenu() {
         startButton.update(mouseHandler);
@@ -399,10 +460,26 @@ public class GamePanel extends JPanel implements Runnable {
     }
     
     private void updatePaused() {
-        resumeButton.update(mouseHandler); menuButton.update(mouseHandler);
-        if (resumeButton.isClicked(mouseHandler)) { soundManager.playClickSound(); gameState = STATE_PLAY; }
-        if (menuButton.isClicked(mouseHandler)) { soundManager.playClickSound(); gameState = STATE_MENU; }
+        resumeButton.update(mouseHandler);
+        shopButton.update(mouseHandler);
+        menuButton.update(mouseHandler);
+
+        if (resumeButton.isClicked(mouseHandler)) {
+            soundManager.playClickSound();
+            gameState = STATE_PLAY;
+        }
+
+        if (shopButton.isClicked(mouseHandler)) {
+            soundManager.playClickSound();
+            if (shopOpener != null) shopOpener.run(); // ⭐ 오버레이 상점 열기
+        }
+
+        if (menuButton.isClicked(mouseHandler)) {
+            soundManager.playClickSound();
+            gameState = STATE_MENU;
+        }
     }
+
     
     private void updateResult() {
         restartButton.update(mouseHandler); menuButton.update(mouseHandler);
@@ -588,10 +665,16 @@ public class GamePanel extends JPanel implements Runnable {
     }
     
     private void drawPause(Graphics2D g2) {
-        g2.setColor(new Color(0, 0, 0, 150)); g2.fillRect(0, 0, WIDTH, HEIGHT);
-        g2.setColor(Color.ORANGE); g2.setFont(new Font("Arial", Font.BOLD, 50));
+        g2.setColor(new Color(0, 0, 0, 150));
+        g2.fillRect(0, 0, WIDTH, HEIGHT);
+
+        g2.setColor(Color.ORANGE);
+        g2.setFont(new Font("Arial", Font.BOLD, 50));
         drawCenteredString(g2, "PAUSED", WIDTH/2, 200);
-        resumeButton.draw(g2); menuButton.draw(g2);
+
+        resumeButton.draw(g2);
+        shopButton.draw(g2);   // ⭐ 이 줄 추가
+        menuButton.draw(g2);
     }
     
     private void drawResult(Graphics2D g2, String title, Color color) {

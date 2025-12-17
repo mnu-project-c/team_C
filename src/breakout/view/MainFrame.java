@@ -1,23 +1,52 @@
 package breakout.view;
 
+import java.awt.Dimension;
 import javax.swing.JFrame;
+import javax.swing.JLayeredPane;
+import javax.swing.SwingUtilities;
 
 public class MainFrame extends JFrame {
-    
+
     public MainFrame() {
         setTitle("C-Team Breakout Game");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setResizable(false);
-        
-        // 패널 생성 및 추가
+
         GamePanel gamePanel = new GamePanel();
-        add(gamePanel);
-        pack(); // 패널 크기에 맞춰 창 크기 자동 조절
-        
-        setLocationRelativeTo(null); // 화면 중앙 배치
+        gamePanel.setBounds(0, 0, GamePanel.WIDTH, GamePanel.HEIGHT);
+
+        ShopOverlayPanel shopOverlay = new ShopOverlayPanel(gamePanel);
+        shopOverlay.setBounds(0, 0, GamePanel.WIDTH, GamePanel.HEIGHT);
+        shopOverlay.setVisible(false);
+
+        gamePanel.setShopOverlay(shopOverlay);
+
+        // GamePanel이 "상점 열기" 요청하면 MainFrame이 오버레이를 띄워줌
+        gamePanel.setShopOpener(() -> {
+            gamePanel.pauseForOverlay();     // 게임 업데이트 멈춤
+            shopOverlay.refreshTexts();      // 가격/점수 표시 최신화
+            shopOverlay.setVisible(true);
+            shopOverlay.requestFocusInWindow();
+        });
+
+        // ShopOverlay가 닫힐 때 처리
+        shopOverlay.setOnClose(() -> {
+            shopOverlay.setVisible(false);
+            gamePanel.resumeFromOverlay();
+            gamePanel.requestFocusInWindow();
+        });
+
+        JLayeredPane layeredPane = new JLayeredPane();
+        layeredPane.setPreferredSize(new Dimension(GamePanel.WIDTH, GamePanel.HEIGHT));
+        layeredPane.add(gamePanel, JLayeredPane.DEFAULT_LAYER);
+        layeredPane.add(shopOverlay, JLayeredPane.MODAL_LAYER);
+
+        add(layeredPane);
+        pack();
+        setLocationRelativeTo(null);
         setVisible(true);
-        
-        // 게임 루프 시작
+
+        SwingUtilities.invokeLater(gamePanel::requestFocusInWindow);
         gamePanel.startGame();
     }
 
