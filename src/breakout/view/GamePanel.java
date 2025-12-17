@@ -18,7 +18,6 @@ import breakout.engine.CollisionDetector;
 import breakout.entity.Ball;
 import breakout.entity.Brick;
 import breakout.entity.Paddle;
-import breakout.entity.ExplosiveBrick;
 import breakout.manager.EffectManager;
 import breakout.manager.InputManager;
 import breakout.manager.MapGenerator;
