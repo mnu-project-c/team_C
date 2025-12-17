@@ -82,15 +82,19 @@ public class GamePanel extends JPanel implements Runnable {
     private int shakeTimer = 0;
     private boolean wasEscPressed = false;
     
+    // ★ 콤보 시스템 변수
+    private int comboCount = 0;       // 현재 콤보
+    private float comboScale = 1.0f;  // 콤보 텍스트 크기 애니메이션용
+    
     // Resources
     private BufferedImage[] backgrounds;
     private int currentBgIndex = 0;
     private Image menuGifImage; 
     
-    // ★ 최적화: 폰트 객체 캐싱 (매 프레임 생성 방지)
-    private Font mainFont;      // 기본 폰트
-    private Font titleFont;     // 큰 제목용 (70px)
-    private Font subTitleFont;  // 부제목용 (30px)
+    // Fonts
+    private Font mainFont;      
+    private Font titleFont;     
+    private Font subTitleFont;  
     
     private final Color[] colorList = { Color.RED, Color.ORANGE, Color.YELLOW, Color.GREEN, Color.BLUE, Color.MAGENTA, Color.WHITE };
     private final String[] colorNames = { "RED", "ORANGE", "YELLOW", "GREEN", "BLUE", "PURPLE", "WHITE" };
@@ -127,8 +131,6 @@ public class GamePanel extends JPanel implements Runnable {
     
     private void loadResources() {
         backgrounds = new BufferedImage[6];
-        
-        // 1. 배경 로드
         for(int i=0; i<6; i++) {
             File file = new File("assets/bg" + (i+1) + ".jpg");
             if (file.exists()) {
@@ -137,31 +139,23 @@ public class GamePanel extends JPanel implements Runnable {
             }
         }
         
-        // 2. GIF 로드
         try {
             File gifFile = new File("assets/main_bg.gif");
-            if (gifFile.exists()) {
-                menuGifImage = Toolkit.getDefaultToolkit().createImage(gifFile.getAbsolutePath());
-            }
+            if (gifFile.exists()) menuGifImage = Toolkit.getDefaultToolkit().createImage(gifFile.getAbsolutePath());
         } catch (Exception e) {}
         
-        // 3. 폰트 로드 및 캐싱 (★ 최적화 핵심)
         try {
             File fontFile = new File("assets/DungGeunMo.ttf");
             if (fontFile.exists()) {
                 Font baseFont = Font.createFont(Font.TRUETYPE_FONT, fontFile);
                 GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(baseFont);
-                
-                // 미리 파생 폰트 생성
                 mainFont = baseFont.deriveFont(Font.BOLD, 12f);
                 titleFont = baseFont.deriveFont(Font.BOLD, 70f);
                 subTitleFont = baseFont.deriveFont(Font.BOLD, 30f);
             } else {
                 useDefaultFonts();
             }
-        } catch (Exception e) {
-            useDefaultFonts();
-        }
+        } catch (Exception e) { useDefaultFonts(); }
     }
     
     private void useDefaultFonts() {
@@ -172,19 +166,15 @@ public class GamePanel extends JPanel implements Runnable {
     
     private void initUI() {
         int centerX = WIDTH / 2 - 100;
-        
-        // 메인 메뉴
         startButton = new GameButton(centerX, 250, 200, 50, "GAME START");
         settingsButton = new GameButton(centerX, 320, 200, 50, "SETTINGS");
         editorButton = new GameButton(centerX, 390, 200, 50, "LEVEL EDITOR");
         exitButton = new GameButton(centerX, 460, 200, 50, "EXIT GAME");
 
-        // 일시정지 및 결과 화면
         restartButton = new GameButton(centerX, 350, 200, 50, "TRY AGAIN");
         menuButton = new GameButton(centerX, 420, 200, 50, "MAIN MENU");
         resumeButton = new GameButton(centerX, 300, 200, 50, "RESUME");
         
-        // 설정
         soundButton = new GameButton(centerX, 150, 200, 50, "SOUND: ON");
         prevBgButton = new GameButton(centerX - 110, 230, 100, 50, "<< BG");
         nextBgButton = new GameButton(centerX + 210, 230, 100, 50, "BG >>");
@@ -192,7 +182,6 @@ public class GamePanel extends JPanel implements Runnable {
         brickColorButton = new GameButton(centerX, 390, 200, 50, "BRICK: YELLOW");
         backButton = new GameButton(centerX, 500, 200, 50, "BACK");
         
-        // 레벨 선택
         lvl1Button = new GameButton(centerX, 200, 200, 50, "LEVEL 1");
         lvl2Button = new GameButton(centerX, 270, 200, 50, "LEVEL 2");
         lvl3Button = new GameButton(centerX, 340, 200, 50, "LEVEL 3");
@@ -224,16 +213,14 @@ public class GamePanel extends JPanel implements Runnable {
     private void resetGame() {
         paddle = new Paddle(WIDTH / 2 - 50, HEIGHT - 60, inputManager);
         ball = new Ball(WIDTH / 2 - 10, HEIGHT - 100);
-        
-        if (currentLevel != 0) {
-            mapGenerator.loadLevel(currentLevel);
-        } else {
-            mapGenerator.bricks = levelEditor.getGeneratedBricks();
-        }
+        if (currentLevel != 0) mapGenerator.loadLevel(currentLevel);
+        else mapGenerator.bricks = levelEditor.getGeneratedBricks();
         
         powerUpManager.clear();
         applyCustomColors();
-        score = 0; lives = 3; shakeTimer = 0; gameState = STATE_PLAY;
+        score = 0; lives = 3; shakeTimer = 0; 
+        comboCount = 0; // ★ 게임 시작 시 콤보 초기화
+        gameState = STATE_PLAY;
     }
     
     private void resetRound() {
@@ -242,6 +229,7 @@ public class GamePanel extends JPanel implements Runnable {
         paddle.getPosition().y = HEIGHT - 60;
         ball = new Ball(WIDTH / 2 - 10, HEIGHT - 100);
         powerUpManager.clear();
+        comboCount = 0; // ★ 라운드 리셋(죽음) 시 콤보 초기화
         try { Thread.sleep(500); } catch (Exception e) {}
     }
     
@@ -261,11 +249,9 @@ public class GamePanel extends JPanel implements Runnable {
     public void run() {
         double drawInterval = 1000000000 / FPS;
         double nextDrawTime = System.nanoTime() + drawInterval;
-        
         while(running) {
             update(); 
             repaint(); 
-            
             try {
                 double remainingTime = (nextDrawTime - System.nanoTime()) / 1000000;
                 if(remainingTime < 0) remainingTime = 0;
@@ -277,6 +263,9 @@ public class GamePanel extends JPanel implements Runnable {
     
     private void update() {
         if (shakeTimer > 0) shakeTimer--;
+        
+        // ★ 콤보 애니메이션: 글자 크기가 서서히 원래대로(1.0) 돌아옴
+        if (comboScale > 1.0f) comboScale -= 0.05f;
 
         inputManager.update();
         effectManager.update(); 
@@ -294,11 +283,8 @@ public class GamePanel extends JPanel implements Runnable {
     }
     
     private void updateMenu() {
-        startButton.update(mouseHandler);
-        settingsButton.update(mouseHandler);
-        exitButton.update(mouseHandler);
-        editorButton.update(mouseHandler);
-        
+        startButton.update(mouseHandler); settingsButton.update(mouseHandler);
+        exitButton.update(mouseHandler); editorButton.update(mouseHandler);
         if (startButton.isClicked(mouseHandler)) { soundManager.playClickSound(); gameState = STATE_LEVEL_SELECT; }
         if (settingsButton.isClicked(mouseHandler)) { soundManager.playClickSound(); gameState = STATE_SETTINGS; }
         if (editorButton.isClicked(mouseHandler)) { soundManager.playClickSound(); gameState = STATE_EDITOR; }
@@ -306,13 +292,9 @@ public class GamePanel extends JPanel implements Runnable {
     }
     
     private void updateLevelSelect() {
-        // ★ [버그 수정] 중복된 코드 제거 및 정리
-        lvl1Button.update(mouseHandler);
-        lvl2Button.update(mouseHandler);
-        lvl3Button.update(mouseHandler);
-        customPlayButton.update(mouseHandler);
+        lvl1Button.update(mouseHandler); lvl2Button.update(mouseHandler);
+        lvl3Button.update(mouseHandler); customPlayButton.update(mouseHandler);
         lvlBackButton.update(mouseHandler);
-        
         if (lvl1Button.isClicked(mouseHandler)) { soundManager.playClickSound(); startGameWithLevel(1); }
         if (lvl2Button.isClicked(mouseHandler)) { soundManager.playClickSound(); startGameWithLevel(2); }
         if (lvl3Button.isClicked(mouseHandler)) { soundManager.playClickSound(); startGameWithLevel(3); }
@@ -322,19 +304,14 @@ public class GamePanel extends JPanel implements Runnable {
     
     private void updateEditor() {
         levelEditor.update(mouseHandler);
-        
         if (levelEditor.getExitButton().isClicked(mouseHandler)) {
-            soundManager.playClickSound();
-            gameState = STATE_MENU;
+            soundManager.playClickSound(); gameState = STATE_MENU;
         }
     }
 
     private void updatePlay() {
         if (inputManager.escape && !wasEscPressed) {
-            soundManager.playClickSound();
-            gameState = STATE_PAUSED;
-            wasEscPressed = true;
-            return;
+            soundManager.playClickSound(); gameState = STATE_PAUSED; wasEscPressed = true; return;
         }
         if (!inputManager.escape) wasEscPressed = false;
         
@@ -342,47 +319,52 @@ public class GamePanel extends JPanel implements Runnable {
         ball.update();
         powerUpManager.update(this, paddle);
         
-        // 패들 충돌
+        // 1. 패들 충돌
         if (CollisionDetector.isColliding(ball, paddle)) {
             CollisionDetector.handlePaddleCollision(ball, paddle);
             if (ball.getVelocity().y < 0) { 
                 startShake(5);
                 soundManager.playHitSound();
+                comboCount = 0; // ★ 패들에 닿으면 콤보 끊김!
             }
         }
         
-        // 벽돌 충돌
+        // 2. 벽돌 충돌
         for (Brick brick : mapGenerator.bricks) {
             if (!brick.isDestroyed) {
                 if (ball.getBounds().intersects(brick.getBounds())) {
                     CollisionDetector.resolveBallVsRect(ball, brick);
                     brick.hit();
-                    score += brick.scoreValue;
+                    
+                    // ★ 콤보 증가 및 애니메이션 트리거
+                    comboCount++;
+                    comboScale = 1.8f; // 글자를 1.8배로 키움 (Pop 효과)
+                    
+                    // 점수에 콤보 보너스 추가 (콤보당 +10점)
+                    int bonus = (comboCount > 1) ? (comboCount * 10) : 0;
+                    score += (brick.scoreValue + bonus);
                     
                     if (brick.isDestroyed) {
                         soundManager.playExplodeSound();
                         if (brick instanceof breakout.entity.ExplosiveBrick) triggerExplosion(brick);
-                        
-                        double cx = brick.getPosition().x + brick.getWidth()/2;
-                        double cy = brick.getPosition().y + brick.getHeight()/2;
-                        effectManager.createExplosion(cx, cy, brick.color);
-                        powerUpManager.maybeSpawn(cx, cy);
+                        effectManager.createExplosion(brick.getPosition().x+40, brick.getPosition().y+15, brick.color);
+                        powerUpManager.maybeSpawn(brick.getPosition().x+40, brick.getPosition().y+15);
                         startShake(5); 
                     } else {
                         soundManager.playHitSound();
                     }
-                    break; // 한 프레임에 하나의 벽돌만 충돌 처리 (뚫고 지나감 방지)
+                    break; 
                 }
             }
         }
         
-        // 공 떨어짐 처리
+        // 3. 공 떨어짐
         if (ball.getPosition().y > HEIGHT) {
             lives--;
             startShake(20);
             if (lives > 0) {
                 soundManager.playFailSound();
-                resetRound();
+                resetRound(); // 여기서 comboCount = 0 됨
             } else {
                 soundManager.playFailSound();
                 gameState = STATE_GAME_OVER;
@@ -390,9 +372,7 @@ public class GamePanel extends JPanel implements Runnable {
             }
         }
         
-        // 승리 조건
-        long remainingBricks = mapGenerator.bricks.stream().filter(b -> !b.isDestroyed).count();
-        if (remainingBricks == 0) {
+        if (mapGenerator.bricks.stream().noneMatch(b -> !b.isDestroyed)) {
             gameState = STATE_VICTORY;
             scoreManager.saveHighScore(score);
         }
@@ -416,43 +396,18 @@ public class GamePanel extends JPanel implements Runnable {
         brickColorButton.update(mouseHandler); backButton.update(mouseHandler);
         
         if (soundButton.isClicked(mouseHandler)) {
-            soundManager.playClickSound();
-            isSoundOn = !isSoundOn;
-            soundManager.setMute(!isSoundOn);
-            soundButton = new GameButton(WIDTH/2 - 100, 150, 200, 50, "SOUND: " + (isSoundOn ? "ON" : "OFF"));
+            soundManager.playClickSound(); isSoundOn = !isSoundOn; soundManager.setMute(!isSoundOn);
+            soundButton = new GameButton(WIDTH/2-100, 150, 200, 50, "SOUND: " + (isSoundOn?"ON":"OFF"));
         }
-        if (prevBgButton.isClicked(mouseHandler)) { 
-            soundManager.playClickSound(); 
-            currentBgIndex = (currentBgIndex-1+6)%6; 
-            changeBackgroundBGM(); 
-        }
-        if (nextBgButton.isClicked(mouseHandler)) { 
-            soundManager.playClickSound(); 
-            currentBgIndex = (currentBgIndex+1)%6; 
-            changeBackgroundBGM(); 
-        }
-        if (ballColorButton.isClicked(mouseHandler)) { 
-            soundManager.playClickSound(); 
-            ballColorIndex = (ballColorIndex+1)%colorList.length; 
-            ballColorButton = new GameButton(WIDTH/2-100, 310, 200, 50, "BALL: " + colorNames[ballColorIndex]); 
-        }
-        if (brickColorButton.isClicked(mouseHandler)) { 
-            soundManager.playClickSound(); 
-            brickColorIndex = (brickColorIndex+1)%colorList.length; 
-            brickColorButton = new GameButton(WIDTH/2-100, 390, 200, 50, "BRICK: " + colorNames[brickColorIndex]); 
-            applyCustomColors(); 
-        }
-        if (backButton.isClicked(mouseHandler)) { 
-            soundManager.playClickSound(); 
-            gameState = STATE_MENU; 
-        }
+        if (prevBgButton.isClicked(mouseHandler)) { soundManager.playClickSound(); currentBgIndex=(currentBgIndex-1+6)%6; changeBackgroundBGM(); }
+        if (nextBgButton.isClicked(mouseHandler)) { soundManager.playClickSound(); currentBgIndex=(currentBgIndex+1)%6; changeBackgroundBGM(); }
+        if (ballColorButton.isClicked(mouseHandler)) { soundManager.playClickSound(); ballColorIndex=(ballColorIndex+1)%colorList.length; ballColorButton=new GameButton(WIDTH/2-100,310,200,50,"BALL: "+colorNames[ballColorIndex]); }
+        if (brickColorButton.isClicked(mouseHandler)) { soundManager.playClickSound(); brickColorIndex=(brickColorIndex+1)%colorList.length; brickColorButton=new GameButton(WIDTH/2-100,390,200,50,"BRICK: "+colorNames[brickColorIndex]); applyCustomColors(); }
+        if (backButton.isClicked(mouseHandler)) { soundManager.playClickSound(); gameState = STATE_MENU; }
     }
     
     private void changeBackgroundBGM() {
-        if (isSoundOn) {
-            String bgmName = "bgm" + (currentBgIndex + 1) + ".wav";
-            soundManager.playBGM(bgmName);
-        }
+        if (isSoundOn) soundManager.playBGM("bgm" + (currentBgIndex + 1) + ".wav");
     }
     
     @Override
@@ -461,96 +416,60 @@ public class GamePanel extends JPanel implements Runnable {
         Graphics2D dbg = (Graphics2D) g;
         dbg.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         
-        // 1. 배경 그리기
         if (gameState != STATE_MENU) {
-            if (backgrounds != null && backgrounds[currentBgIndex] != null) {
-                dbg.drawImage(backgrounds[currentBgIndex], 0, 0, WIDTH, HEIGHT, null);
-            } else {
-                dbg.setColor(Color.BLACK);
-                dbg.fillRect(0, 0, WIDTH, HEIGHT);
-            }
+            if (backgrounds != null && backgrounds[currentBgIndex] != null) dbg.drawImage(backgrounds[currentBgIndex], 0, 0, WIDTH, HEIGHT, null);
+            else { dbg.setColor(Color.BLACK); dbg.fillRect(0, 0, WIDTH, HEIGHT); }
         }
         
-        // 2. 쉐이크 효과 적용
         int sx = 0, sy = 0;
-        if (shakeTimer > 0) {
-            sx = (int)(Math.random()*10-5);
-            sy = (int)(Math.random()*10-5);
-            dbg.translate(sx, sy);
-        }
+        if (shakeTimer > 0) { sx=(int)(Math.random()*10-5); sy=(int)(Math.random()*10-5); dbg.translate(sx, sy); }
         
-        // 3. 상태별 화면 그리기
         switch (gameState) {
             case STATE_MENU: drawMenu(dbg); break;
             case STATE_LEVEL_SELECT: drawLevelSelect(dbg); break;
             case STATE_PLAY:
-                mapGenerator.draw(dbg);
-                paddle.draw(dbg);
-                dbg.setColor(colorList[ballColorIndex]);
-                ball.draw(dbg);
-                effectManager.draw(dbg);
-                powerUpManager.draw(dbg);
+                mapGenerator.draw(dbg); paddle.draw(dbg);
+                dbg.setColor(colorList[ballColorIndex]); ball.draw(dbg);
+                effectManager.draw(dbg); powerUpManager.draw(dbg);
                 drawHUD(dbg);
                 break;
             case STATE_PAUSED:
-                mapGenerator.draw(dbg);
-                paddle.draw(dbg);
-                dbg.setColor(colorList[ballColorIndex]);
-                ball.draw(dbg);
+                mapGenerator.draw(dbg); paddle.draw(dbg);
+                dbg.setColor(colorList[ballColorIndex]); ball.draw(dbg);
                 drawPause(dbg);
                 break;
             case STATE_GAME_OVER:
-                mapGenerator.draw(dbg);
-                paddle.draw(dbg);
-                dbg.setColor(colorList[ballColorIndex]);
-                ball.draw(dbg);
-                effectManager.draw(dbg);
-                drawResult(dbg, "GAME OVER", Color.RED);
+                mapGenerator.draw(dbg); paddle.draw(dbg);
+                dbg.setColor(colorList[ballColorIndex]); ball.draw(dbg);
+                effectManager.draw(dbg); drawResult(dbg, "GAME OVER", Color.RED);
                 break;
             case STATE_VICTORY:
-                mapGenerator.draw(dbg);
-                paddle.draw(dbg);
-                dbg.setColor(colorList[ballColorIndex]);
-                ball.draw(dbg);
-                effectManager.draw(dbg);
-                drawResult(dbg, "STAGE CLEAR!", Color.GREEN);
+                mapGenerator.draw(dbg); paddle.draw(dbg);
+                dbg.setColor(colorList[ballColorIndex]); ball.draw(dbg);
+                effectManager.draw(dbg); drawResult(dbg, "STAGE CLEAR!", Color.GREEN);
                 break;
             case STATE_SETTINGS: drawSettings(dbg); break;
             case STATE_EDITOR: levelEditor.draw(dbg); break;
         }
         
-        // 쉐이크 복구
         if (sx != 0 || sy != 0) dbg.translate(-sx, -sy);
-        
-        // ★ 최적화: 그래픽 버퍼 동기화 (Linux/Mac 깜빡임 방지)
-        Toolkit.getDefaultToolkit().sync(); 
+        if (gameState == STATE_MENU) Toolkit.getDefaultToolkit().sync(); 
     }
     
-    // ★ 최적화: 미리 캐싱된 Font 객체 사용
     private void draw3DText(Graphics2D g2, String text, int x, int y, Color mainColor, Color shadowColor, Font font) {
-        g2.setFont(font);
-        g2.setColor(shadowColor);
-        for(int i = 5; i > 0; i--) g2.drawString(text, x + i, y + i);
-        g2.setColor(mainColor);
-        g2.drawString(text, x, y);
+        g2.setFont(font); g2.setColor(shadowColor);
+        for(int i=5; i>0; i--) g2.drawString(text, x+i, y+i);
+        g2.setColor(mainColor); g2.drawString(text, x, y);
     }
     
     private void drawMenu(Graphics2D g2) {
-        if (menuGifImage != null) {
-            g2.drawImage(menuGifImage, 0, 0, WIDTH, HEIGHT, this);
-        } else {
-            g2.setColor(Color.BLACK);
-            g2.fillRect(0, 0, WIDTH, HEIGHT);
-        }
+        if (menuGifImage != null) g2.drawImage(menuGifImage, 0, 0, WIDTH, HEIGHT, this);
+        else { g2.setColor(Color.BLACK); g2.fillRect(0, 0, WIDTH, HEIGHT); }
         
-        // ★ 캐싱된 폰트 사용
         draw3DText(g2, "샤갈적인 벽돌깨기", WIDTH/2 - 280, 150, Color.YELLOW, Color.DARK_GRAY, titleFont);
         draw3DText(g2, "[학생회의 반란]", WIDTH/2 - 130, 210, Color.WHITE, Color.BLACK, subTitleFont);
-        
-        g2.setColor(Color.CYAN);
-        g2.setFont(new Font("Consolas", Font.BOLD, 20)); // Score 폰트는 단순하므로 유지하거나 이것도 캐싱 가능
+        g2.setColor(Color.CYAN); g2.setFont(new Font("Consolas", Font.BOLD, 20));
         drawCenteredString(g2, "HIGH SCORE: " + scoreManager.getHighScore(), WIDTH/2, 550);
-        
         startButton.draw(g2); settingsButton.draw(g2); exitButton.draw(g2); editorButton.draw(g2);
     }
     
@@ -562,14 +481,26 @@ public class GamePanel extends JPanel implements Runnable {
     }
     
     private void drawHUD(Graphics2D g2) {
-        g2.setColor(new Color(0, 0, 0, 100));
-        g2.fillRect(0, 0, WIDTH, 40);
-        g2.setColor(Color.WHITE);
-        g2.setFont(new Font("Consolas", Font.BOLD, 24));
+        g2.setColor(new Color(0, 0, 0, 100)); g2.fillRect(0, 0, WIDTH, 40);
+        g2.setColor(Color.WHITE); g2.setFont(new Font("Consolas", Font.BOLD, 24));
         g2.drawString("SCORE: " + score, 20, 28);
         g2.drawString("LIVES:", WIDTH - 180, 28);
-        for (int i = 0; i < lives; i++) {
-            drawHeart(g2, WIDTH - 100 + (i * 30), 10);
+        for (int i = 0; i < lives; i++) drawHeart(g2, WIDTH - 100 + (i * 30), 10);
+        
+        // ★ 콤보 텍스트 그리기 (2콤보 이상일 때)
+        if (comboCount >= 2) {
+            int fontSize = (int)(40 * comboScale); // 콤보 높을수록, 방금 터졌을수록 커짐
+            g2.setFont(new Font("Consolas", Font.BOLD, fontSize));
+            
+            // 콤보 색상 변화 (노랑 -> 주황 -> 빨강)
+            if (comboCount < 5) g2.setColor(Color.YELLOW);
+            else if (comboCount < 10) g2.setColor(Color.ORANGE);
+            else g2.setColor(Color.RED);
+            
+            String comboText = comboCount + " COMBO!";
+            int tw = g2.getFontMetrics().stringWidth(comboText);
+            // 화면 중앙 상단 (점수 아래쪽)에 표시
+            g2.drawString(comboText, WIDTH/2 - tw/2, 80);
         }
     }
     
@@ -611,13 +542,12 @@ public class GamePanel extends JPanel implements Runnable {
         int ex = (int) (centerBrick.getPosition().x - centerBrick.getWidth());
         int ey = (int) (centerBrick.getPosition().y - centerBrick.getHeight());
         Rectangle area = new Rectangle(ex, ey, (int)centerBrick.getWidth()*3, (int)centerBrick.getHeight()*3);
-        
         for (Brick b : mapGenerator.bricks) {
             if (!b.isDestroyed && b != centerBrick && area.intersects(b.getBounds())) {
                 b.hit(); 
                 if (b.isDestroyed) {
                     score += b.scoreValue;
-                    effectManager.createExplosion(b.getPosition().x + b.getWidth()/2, b.getPosition().y + b.getHeight()/2, b.color);
+                    effectManager.createExplosion(b.getPosition().x+40, b.getPosition().y+15, b.color);
                 }
             }
         }
