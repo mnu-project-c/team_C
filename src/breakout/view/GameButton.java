@@ -1,89 +1,88 @@
 package breakout.view;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.GradientPaint;
 import java.awt.Graphics2D;
-import java.awt.Rectangle;
+import java.awt.Rectangle; // ★ Rectangle import 확인
+import java.awt.RenderingHints;
+
 import breakout.manager.MouseHandler;
 
 public class GameButton {
-
-    private int x, y, width, height;
-    private String text;
-    private Rectangle bounds;
     
-    // 버튼 상태
+    public Rectangle bounds;
+    public String text;
     private boolean isHovered = false;
-    private boolean isPressed = false;
     
-    // 클릭 이벤트 감지용
-    private boolean wasClicked = false;
+    private final Color goldMain = new Color(255, 215, 0);
+    private final Color goldDark = new Color(184, 134, 11);
 
     public GameButton(int x, int y, int width, int height, String text) {
-        this.x = x;
-        this.y = y;
-        this.width = width;
-        this.height = height;
-        this.text = text;
         this.bounds = new Rectangle(x, y, width, height);
+        this.text = text;
     }
 
     public void update(MouseHandler mouse) {
-        // 마우스가 버튼 영역 안에 있는지 확인
         if (bounds.contains(mouse.x, mouse.y)) {
             isHovered = true;
-            if (mouse.clicked) {
-                isPressed = true;
-                wasClicked = true;
-            } else {
-                isPressed = false;
-            }
         } else {
             isHovered = false;
-            isPressed = false;
-            wasClicked = false; // 영역 밖으로 나가면 클릭 취소
         }
     }
 
-    // 마우스를 뗐을 때 비로소 "클릭되었다"고 판단 (버그 방지)
     public boolean isClicked(MouseHandler mouse) {
-        if (isHovered && wasClicked && !mouse.clicked) {
-            wasClicked = false;
+        if (isHovered && mouse.isPressed) {
+            mouse.isPressed = false;
             return true;
         }
         return false;
     }
 
-    public void draw(Graphics2D g) {
-        // 1. 배경 그리기 (상태에 따라 색상 변경)
-        if (isPressed) {
-            g.setColor(new Color(100, 100, 100)); // 클릭 중: 어두운 회색
-        } else if (isHovered) {
-            g.setColor(new Color(150, 150, 150)); // 마우스 오버: 밝은 회색
+    public void draw(Graphics2D g, Font customFont) {
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        
+        // 1. 버튼 배경
+        GradientPaint gp;
+        if (isHovered) {
+            gp = new GradientPaint(bounds.x, bounds.y, Color.WHITE, bounds.x, bounds.y + bounds.height, goldMain);
         } else {
-            g.setColor(Color.WHITE);              // 평상시: 흰색
+            gp = new GradientPaint(bounds.x, bounds.y, goldMain, bounds.x, bounds.y + bounds.height, goldDark);
         }
-        g.fillRect(x, y, width, height);
+        g.setPaint(gp);
+        g.fillRoundRect(bounds.x, bounds.y, bounds.width, bounds.height, 15, 15);
+        
+        // 2. 하이라이트
+        g.setColor(new Color(255, 255, 255, 100));
+        g.fillRoundRect(bounds.x + 5, bounds.y + 5, bounds.width - 10, bounds.height / 2 - 5, 10, 10);
 
-        // 2. 테두리 그리기
-        g.setColor(Color.BLACK);
-        g.drawRect(x, y, width, height);
-
-        // 3. 텍스트 그리기 (중앙 정렬)
-        g.setColor(isPressed ? Color.WHITE : Color.BLACK);
-        g.setFont(new Font("Consolas", Font.BOLD, 20));
+        // 3. 테두리
+        g.setStroke(new BasicStroke(3));
+        g.setColor(new Color(255, 255, 220)); 
+        g.drawRoundRect(bounds.x, bounds.y, bounds.width, bounds.height, 15, 15);
         
-        int stringWidth = g.getFontMetrics().stringWidth(text);
-        int stringHeight = g.getFontMetrics().getAscent();
+        // 4. 텍스트 (폰트 적용)
+        if (customFont != null) {
+            g.setFont(customFont.deriveFont(Font.BOLD, 20f));
+        } else {
+            g.setFont(new Font("SansSerif", Font.BOLD, 20));
+        }
         
-        // 정중앙 좌표 계산
-        int textX = x + (width - stringWidth) / 2;
-        int textY = y + (height + stringHeight) / 2 - 4;
+        g.setColor(new Color(100, 70, 0)); 
+        drawCenteredString(g, text, bounds.x + bounds.width / 2 + 1, bounds.y + bounds.height / 2 + 1);
         
+        if (isHovered) g.setColor(new Color(139, 69, 19));
+        else g.setColor(Color.WHITE);
+        
+        drawCenteredString(g, text, bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+    }
+    
+    private void drawCenteredString(Graphics2D g, String text, int x, int y) {
+        FontMetrics fm = g.getFontMetrics();
+        int textX = x - fm.stringWidth(text) / 2;
+        int textY = y + (fm.getAscent() - fm.getDescent()) / 2;
         g.drawString(text, textX, textY);
     }
-    public int getX() {return x;}
-    public int getY() {return y;}
-    public int getWidth() {return width;}
-    public int getHeight() {return height;}
 }
