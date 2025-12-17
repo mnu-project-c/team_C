@@ -24,14 +24,13 @@ import breakout.manager.MapGenerator;
 import breakout.manager.MouseHandler;
 import breakout.manager.PowerUpManager;
 import breakout.manager.ScoreManager;
-
+import breakout.manager.SoundManager;
 
 public class GamePanel extends JPanel implements Runnable {
     
     public static final int WIDTH = 800;
     public static final int HEIGHT = 600;
     
-    // 상태 상수
     public static final int STATE_MENU = 0;
     public static final int STATE_PLAY = 1;
     public static final int STATE_GAME_OVER = 2;
@@ -51,12 +50,12 @@ public class GamePanel extends JPanel implements Runnable {
     private EffectManager effectManager;
     private ScoreManager scoreManager;
     private PowerUpManager powerUpManager;
+    private SoundManager soundManager;
     
     private Paddle paddle;
     private Ball ball;
     private MapGenerator mapGenerator;
     
-    // UI 버튼들
     private GameButton startButton, settingsButton, exitButton;
     private GameButton restartButton, menuButton;
     private GameButton soundButton, backButton;
@@ -99,6 +98,9 @@ public class GamePanel extends JPanel implements Runnable {
         effectManager = new EffectManager();
         scoreManager = new ScoreManager();
         powerUpManager = new PowerUpManager();
+        
+        soundManager = new SoundManager();
+        soundManager.playBGM("bgm1.wav"); 
         
         loadBackgrounds();
         initGameObjects(); 
@@ -176,17 +178,15 @@ public class GamePanel extends JPanel implements Runnable {
     
     private void resetRound() {
         paddle.resetWidth();
-        paddle.getPosition().x = WIDTH / 2 - 50; // GameObject의 position 직접 접근 대신 getter 사용
+        paddle.getPosition().x = WIDTH / 2 - 50; 
         paddle.getPosition().y = HEIGHT - 60;
         ball = new Ball(WIDTH / 2 - 10, HEIGHT - 100);
         powerUpManager.clear();
         try { Thread.sleep(500); } catch (Exception e) {}
     }
     
-    // 아이템 효과
     public void addLife() { lives++; }
     public void expandPaddle() { paddle.expand(); }
-    
     public void startShake(int duration) { this.shakeTimer = duration; }
     
     public void startGame() {
@@ -218,7 +218,6 @@ public class GamePanel extends JPanel implements Runnable {
     private void update() {
         inputManager.update();
         effectManager.update(); 
-        
         switch (gameState) {
             case STATE_MENU: updateMenu(); break;
             case STATE_LEVEL_SELECT: updateLevelSelect(); break;
@@ -263,52 +262,50 @@ public class GamePanel extends JPanel implements Runnable {
         powerUpManager.update(this, paddle);
         
         if (CollisionDetector.isColliding(ball, paddle)) {
-            
-            // 1. 패들 전용 충돌 처리
             CollisionDetector.handlePaddleCollision(ball, paddle);
-            // 2. 이펙트 (공이 튕겨 나갔을 때만 흔들기)
             if (ball.getVelocity().y < 0) { 
                 startShake(5);
+                soundManager.playHitSound(); 
             }
         }
         
         for (Brick brick : mapGenerator.bricks) {
             if (!brick.isDestroyed) {
-                // 충돌 감지 (CollisionDetector 사용 권장)
                 if (ball.getBounds().intersects(brick.getBounds())) {
-                    
-                    // 1. 물리 반사 (앞서 적용한 코드)
                     breakout.engine.CollisionDetector.resolveBallVsRect(ball, brick);
-
-                    // 2. 벽돌 타격
                     brick.hit();
                     score += brick.scoreValue;
+                    soundManager.playBreakSound();
                     
-                    // 3. ★ 폭발 벽돌인지 확인 후 폭발 실행
                     if (brick instanceof breakout.entity.ExplosiveBrick) {
                         triggerExplosion(brick);
                     }
 
-                    // 4. 이펙트 생성
                     double cx = brick.getPosition().x + brick.getWidth()/2;
                     double cy = brick.getPosition().y + brick.getHeight()/2;
                     effectManager.createExplosion(cx, cy, brick.color);
                     powerUpManager.maybeSpawn(cx, cy);
                     
                     if (!(brick instanceof breakout.entity.ExplosiveBrick)) {
-                         startShake(5); // 일반 벽돌은 살짝만 흔들림
+                         startShake(5); 
                     }
-                    
                     break;
                 }
             }
         }
         
+        // ★ [여기가 핵심] 공이 바닥에 떨어졌을 때
         if (ball.getPosition().y > HEIGHT) {
             lives--;
             startShake(20);
-            if (lives > 0) resetRound();
-            else {
+            
+            if (lives > 0) {
+                // 목숨 남았으면 실패 소리만
+                soundManager.playFailSound(); 
+                resetRound();
+            } else {
+                // 목숨 0이면 게임오버 소리 & 상태 변경
+                soundManager.playGameOverSound();
                 gameState = STATE_GAME_OVER;
                 scoreManager.saveHighScore(score);
             }
@@ -318,6 +315,7 @@ public class GamePanel extends JPanel implements Runnable {
         if (remainingBricks == 0) {
             gameState = STATE_VICTORY;
             scoreManager.saveHighScore(score);
+            // soundManager.playSound(SoundManager.SOUND_VICTORY);
         }
     }
     
@@ -350,18 +348,24 @@ public class GamePanel extends JPanel implements Runnable {
         
         if (soundButton.isClicked(mouseHandler)) {
             isSoundOn = !isSoundOn;
+            soundManager.setMute(!isSoundOn);
             soundButton = new GameButton(WIDTH/2 - 100, 150, 200, 50, "SOUND: " + (isSoundOn ? "ON" : "OFF"));
+            if(isSoundOn) changeBackgroundBGM();
         }
+        
         if (backgrounds != null) {
             if (prevBgButton.isClicked(mouseHandler)) {
                 currentBgIndex--;
                 if (currentBgIndex < 0) currentBgIndex = backgrounds.length - 1;
+                changeBackgroundBGM(); 
             }
             if (nextBgButton.isClicked(mouseHandler)) {
                 currentBgIndex++;
                 if (currentBgIndex >= backgrounds.length) currentBgIndex = 0;
+                changeBackgroundBGM(); 
             }
         }
+        
         if (ballColorButton.isClicked(mouseHandler)) {
             ballColorIndex++;
             if (ballColorIndex >= colorList.length) ballColorIndex = 0;
@@ -374,6 +378,13 @@ public class GamePanel extends JPanel implements Runnable {
             applyCustomColors();
         }
         if (backButton.isClicked(mouseHandler)) gameState = STATE_MENU;
+    }
+    
+    private void changeBackgroundBGM() {
+        if (isSoundOn) {
+            String bgmName = "bgm" + (currentBgIndex + 1) + ".wav";
+            soundManager.playBGM(bgmName);
+        }
     }
     
     private void render() {
@@ -399,20 +410,13 @@ public class GamePanel extends JPanel implements Runnable {
         }
         
         switch (gameState) {
-            case STATE_MENU:
-                drawMenu(dbg);
-                break;
-            case STATE_LEVEL_SELECT:
-                drawLevelSelect(dbg);
-                break;
+            case STATE_MENU: drawMenu(dbg); break;
+            case STATE_LEVEL_SELECT: drawLevelSelect(dbg); break;
             case STATE_PLAY:
                 mapGenerator.draw(dbg);
                 paddle.draw(dbg);
-                
-                // ★ 3D 공 효과 적용: 색상만 지정하고 그리기 명령은 Ball에게 위임
                 dbg.setColor(colorList[ballColorIndex]);
                 ball.draw(dbg); 
-                
                 effectManager.draw(dbg);
                 powerUpManager.draw(dbg);
                 drawHUD(dbg);
@@ -440,9 +444,7 @@ public class GamePanel extends JPanel implements Runnable {
                 effectManager.draw(dbg);
                 drawResult(dbg, "STAGE CLEAR!", Color.GREEN);
                 break;
-            case STATE_SETTINGS:
-                drawSettings(dbg);
-                break;
+            case STATE_SETTINGS: drawSettings(dbg); break;
         }
         
         if (shakeTimer > 0 || (shakeX != 0 || shakeY != 0)) {
@@ -452,7 +454,6 @@ public class GamePanel extends JPanel implements Runnable {
         draw();
     }
     
-    // UI 드로잉 메소드들 (변경 없음, 코드 길이상 생략하나 필요 시 이전 답변 참고하여 그대로 사용)
     private void drawLevelSelect(Graphics2D g2) {
         g2.setColor(new Color(0, 0, 0, 150));
         g2.fillRect(0, 0, WIDTH, HEIGHT);
@@ -566,7 +567,6 @@ public class GamePanel extends JPanel implements Runnable {
     }
     
     private void triggerExplosion(Brick centerBrick) {
-        // 1. 폭발 범위 설정 (자신을 중심으로 3x3 크기 영역)
         int exX = (int) (centerBrick.getPosition().x - centerBrick.getWidth());
         int exY = (int) (centerBrick.getPosition().y - centerBrick.getHeight());
         int exW = (int) (centerBrick.getWidth() * 3);
@@ -574,13 +574,10 @@ public class GamePanel extends JPanel implements Runnable {
         
         Rectangle explosionArea = new Rectangle(exX, exY, exW, exH);
 
-        // 2. 모든 벽돌을 검사하여 범위 안에 있으면 데미지 입힘
         for (Brick b : mapGenerator.bricks) {
             if (!b.isDestroyed && b != centerBrick) {
                 if (explosionArea.intersects(b.getBounds())) {
-                    b.hit(); // 주변 벽돌 데미지
-                    
-                    // 주변 벽돌도 깨지는 효과 연출
+                    b.hit(); 
                     if (b.isDestroyed) {
                         score += b.scoreValue;
                         effectManager.createExplosion(
@@ -592,8 +589,6 @@ public class GamePanel extends JPanel implements Runnable {
                 }
             }
         }
-        
-        // 3. 화면을 강하게 흔들어 폭발 느낌 강조
         startShake(20); 
     }
 }
