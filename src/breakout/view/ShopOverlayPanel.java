@@ -112,10 +112,12 @@ public class ShopOverlayPanel extends JPanel {
         drawCentered(g2, "SCORE: " + gamePanel.getScore(), GamePanel.WIDTH / 2, 190);
 
         // 버튼들
-        buyPaddleBtn.draw(g2);
-        buySlowBtn.draw(g2);
-        buyLifeBtn.draw(g2);
-        backBtn.draw(g2);
+        Font btnFont = new Font("Consolas", Font.BOLD, 24);
+
+        buyPaddleBtn.draw(g2, btnFont);
+        buySlowBtn.draw(g2, btnFont);
+        buyLifeBtn.draw(g2, btnFont);
+        backBtn.draw(g2, btnFont);
 
         // 메시지
         if (msgTimer > 0 && msg != null && !msg.isEmpty()) {
