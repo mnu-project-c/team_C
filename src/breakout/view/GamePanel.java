@@ -467,14 +467,31 @@ public class GamePanel extends JPanel implements Runnable {
     }
     
     private void drawHUD(Graphics2D g2) {
+        // 1. 상단 정보창 배경
         g2.setColor(new Color(0, 0, 0, 100));
         g2.fillRect(0, 0, WIDTH, 40);
+        
+        // 2. 점수 표시
         g2.setColor(Color.WHITE);
         g2.setFont(new Font("Consolas", Font.BOLD, 24));
         g2.drawString("SCORE: " + score, 20, 28);
-        g2.drawString("LIVES:", WIDTH - 180, 28);
-        for (int i = 0; i < lives; i++) {
-            drawHeart(g2, WIDTH - 100 + (i * 30), 10);
+        
+        // 3. 생명(LIVES) 표시
+        g2.drawString("LIVES:", WIDTH - 200, 28); // 텍스트 위치 살짝 왼쪽으로 이동
+
+        int maxHearts = 3; 
+        int heartsToDraw = Math.min(lives, maxHearts); // 현재 생명과 3 중 작은 값 선택
+
+        for (int i = 0; i < heartsToDraw; i++) {
+            drawHeart(g2, WIDTH - 110 + (i * 30), 10);
+        }
+
+        if (lives > maxHearts) {
+            int extraLives = lives - maxHearts;
+            
+            g2.setFont(new Font("Consolas", Font.BOLD, 20));
+            g2.setColor(Color.YELLOW);
+            g2.drawString("+" + extraLives, WIDTH - 110 + (maxHearts * 30), 28);
         }
     }
     
