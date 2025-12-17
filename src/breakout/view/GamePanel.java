@@ -5,9 +5,12 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.GraphicsEnvironment;
+import java.awt.Image;
 import java.awt.RenderingHints;
-import java.awt.image.BufferedImage;
 import java.awt.Rectangle;
+import java.awt.Toolkit;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 
@@ -31,6 +34,7 @@ public class GamePanel extends JPanel implements Runnable {
     public static final int WIDTH = 800;
     public static final int HEIGHT = 600;
     
+    // 상태 상수
     public static final int STATE_MENU = 0;
     public static final int STATE_PLAY = 1;
     public static final int STATE_GAME_OVER = 2;
@@ -39,8 +43,6 @@ public class GamePanel extends JPanel implements Runnable {
     public static final int STATE_PAUSED = 5;
     public static final int STATE_LEVEL_SELECT = 6;
     
-    private BufferedImage dbImage;
-    private Graphics2D dbg;
     private Thread gameThread;
     private boolean running = false;
     private final int FPS = 60;
@@ -56,6 +58,7 @@ public class GamePanel extends JPanel implements Runnable {
     private Ball ball;
     private MapGenerator mapGenerator;
     
+    // UI 버튼
     private GameButton startButton, settingsButton, exitButton;
     private GameButton restartButton, menuButton;
     private GameButton soundButton, backButton;
@@ -70,22 +73,29 @@ public class GamePanel extends JPanel implements Runnable {
     private boolean isSoundOn = true;
     private int shakeTimer = 0;
     private boolean wasEscPressed = false;
+    
+    // 리소스 관련 변수
     private BufferedImage[] backgrounds;
     private int currentBgIndex = 0;
+    private Image menuGifImage; // ★ 성빈님 기능: GIF 배경
+    private Font customFont;    // ★ 성빈님 기능: 3D 폰트
+    
     private final Color[] colorList = { Color.RED, Color.ORANGE, Color.YELLOW, Color.GREEN, Color.BLUE, Color.MAGENTA, Color.WHITE };
     private final String[] colorNames = { "RED", "ORANGE", "YELLOW", "GREEN", "BLUE", "PURPLE", "WHITE" };
     private int ballColorIndex = 0; 
     private int brickColorIndex = 2;
+    
     private int currentLevel = 1;
 
     public GamePanel() {
         setPreferredSize(new Dimension(WIDTH, HEIGHT));
-        setDoubleBuffered(true);
+        setDoubleBuffered(true); // ★ 성빈님 기능: 깜빡임 방지
         setFocusable(true);
         requestFocus();
         
         inputManager = new InputManager();
         addKeyListener(inputManager);
+        
         mouseHandler = new MouseHandler();
         addMouseListener(mouseHandler);
         addMouseMotionListener(mouseHandler);
@@ -93,38 +103,71 @@ public class GamePanel extends JPanel implements Runnable {
         effectManager = new EffectManager();
         scoreManager = new ScoreManager();
         powerUpManager = new PowerUpManager();
-        soundManager = new SoundManager();
+        soundManager = new SoundManager(); // 협업 기능: 사운드
         soundManager.playBGM("bgm1.wav"); 
         
-        loadBackgrounds();
+        // ★ 리소스 통합 로딩 (안전 모드)
+        loadResources();
+        
         initGameObjects(); 
         initUI();          
         applyCustomColors();
     }
     
-    private void loadBackgrounds() {
+    // ★ 안전한 리소스 로딩 (팀원 파일 + 성빈님 파일 모두 처리)
+    private void loadResources() {
         backgrounds = new BufferedImage[6];
-        try {
-            for(int i=0; i<6; i++) {
-                backgrounds[i] = ImageIO.read(new File("assets/bg" + (i+1) + ".jpg"));
+        
+        // 1. 배경 로드
+        for(int i=0; i<6; i++) {
+            File file = new File("assets/bg" + (i+1) + ".jpg");
+            if (file.exists()) {
+                try { backgrounds[i] = ImageIO.read(file); } 
+                catch (Exception e) { System.out.println("배경 로드 실패: " + file.getName()); }
             }
-        } catch (IOException e) { }
+        }
+        
+        // 2. GIF 로드 (성빈님 기능)
+        try {
+            File gifFile = new File("assets/main_bg.gif");
+            if (gifFile.exists()) {
+                menuGifImage = Toolkit.getDefaultToolkit().createImage(gifFile.getAbsolutePath());
+            }
+        } catch (Exception e) {}
+        
+        // 3. 폰트 로드 (성빈님 기능)
+        try {
+            File fontFile = new File("assets/DungGeunMo.ttf");
+            if (fontFile.exists()) {
+                customFont = Font.createFont(Font.TRUETYPE_FONT, fontFile);
+                GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(customFont);
+            } else {
+                customFont = new Font("SansSerif", Font.BOLD, 12);
+            }
+        } catch (Exception e) {
+            customFont = new Font("SansSerif", Font.BOLD, 12);
+        }
     }
     
     private void initUI() {
         int centerX = WIDTH / 2 - 100;
-        startButton = new GameButton(centerX, 250, 200, 50, "GAME START");
-        settingsButton = new GameButton(centerX, 320, 200, 50, "SETTINGS");
-        exitButton = new GameButton(centerX, 390, 200, 50, "EXIT GAME");
+        
+        // 버튼 위치 조정 (타이틀 공간 확보)
+        startButton = new GameButton(centerX, 270, 200, 50, "GAME START");
+        settingsButton = new GameButton(centerX, 340, 200, 50, "SETTINGS");
+        exitButton = new GameButton(centerX, 410, 200, 50, "EXIT GAME");
+        
         restartButton = new GameButton(centerX, 350, 200, 50, "TRY AGAIN");
         menuButton = new GameButton(centerX, 420, 200, 50, "MAIN MENU");
         resumeButton = new GameButton(centerX, 300, 200, 50, "RESUME");
+        
         soundButton = new GameButton(centerX, 150, 200, 50, "SOUND: ON");
         prevBgButton = new GameButton(centerX - 110, 230, 100, 50, "<< BG");
         nextBgButton = new GameButton(centerX + 210, 230, 100, 50, "BG >>");
         ballColorButton = new GameButton(centerX, 310, 200, 50, "BALL: RED");
         brickColorButton = new GameButton(centerX, 390, 200, 50, "BRICK: YELLOW");
         backButton = new GameButton(centerX, 500, 200, 50, "BACK");
+        
         lvl1Button = new GameButton(centerX, 200, 200, 50, "LEVEL 1");
         lvl2Button = new GameButton(centerX, 270, 200, 50, "LEVEL 2");
         lvl3Button = new GameButton(centerX, 340, 200, 50, "LEVEL 3");
@@ -184,8 +227,12 @@ public class GamePanel extends JPanel implements Runnable {
     public void run() {
         double drawInterval = 1000000000 / FPS;
         double nextDrawTime = System.nanoTime() + drawInterval;
+        
         while(running) {
-            update(); render(); draw();
+            // ★ 수정: render() 제거하고 repaint() 사용 (깜빡임 해결)
+            update(); 
+            repaint(); 
+            
             try {
                 double remainingTime = (nextDrawTime - System.nanoTime()) / 1000000;
                 if(remainingTime < 0) remainingTime = 0;
@@ -196,8 +243,12 @@ public class GamePanel extends JPanel implements Runnable {
     }
     
     private void update() {
+        // 쉐이크 타이머 감소
+        if (shakeTimer > 0) shakeTimer--;
+
         inputManager.update();
         effectManager.update(); 
+        
         switch (gameState) {
             case STATE_MENU: updateMenu(); break;
             case STATE_LEVEL_SELECT: updateLevelSelect(); break;
@@ -229,7 +280,7 @@ public class GamePanel extends JPanel implements Runnable {
     
     private void updatePlay() {
         if (inputManager.escape && !wasEscPressed) {
-            soundManager.playClickSound(); // 메뉴 나갈 때 딸깍
+            soundManager.playClickSound();
             gameState = STATE_PAUSED;
             wasEscPressed = true;
             return;
@@ -240,49 +291,47 @@ public class GamePanel extends JPanel implements Runnable {
         ball.update();
         powerUpManager.update(this, paddle);
         
-        // 패들 충돌
         if (CollisionDetector.isColliding(ball, paddle)) {
             CollisionDetector.handlePaddleCollision(ball, paddle);
             if (ball.getVelocity().y < 0) { 
                 startShake(5);
-                soundManager.playHitSound(); // 팅!
+                soundManager.playHitSound();
             }
         }
         
-        // 벽돌 충돌
         for (Brick brick : mapGenerator.bricks) {
             if (!brick.isDestroyed) {
                 if (ball.getBounds().intersects(brick.getBounds())) {
-                    breakout.engine.CollisionDetector.resolveBallVsRect(ball, brick);
+                    CollisionDetector.resolveBallVsRect(ball, brick);
                     brick.hit();
                     score += brick.scoreValue;
                     
-                    // 핵심: 완전히 깨졌을 때만 explode 소리, 아니면 hit 소리
                     if (brick.isDestroyed) {
-                        soundManager.playExplodeSound(); // 쾅!
+                        soundManager.playExplodeSound();
+                        // 협업 기능: 폭발 벽돌 연쇄 폭발
                         if (brick instanceof breakout.entity.ExplosiveBrick) triggerExplosion(brick);
+                        
                         double cx = brick.getPosition().x + brick.getWidth()/2;
                         double cy = brick.getPosition().y + brick.getHeight()/2;
                         effectManager.createExplosion(cx, cy, brick.color);
                         powerUpManager.maybeSpawn(cx, cy);
                         startShake(5); 
                     } else {
-                        soundManager.playHitSound(); // 팅! (벽 소리 대신 사용)
+                        soundManager.playHitSound();
                     }
                     break;
                 }
             }
         }
         
-        // 공 추락
         if (ball.getPosition().y > HEIGHT) {
             lives--;
             startShake(20);
             if (lives > 0) {
-                soundManager.playFailSound(); // 으악! (Fail.wav)
+                soundManager.playFailSound();
                 resetRound();
             } else {
-                soundManager.playFailSound(); // 일단 실패음 재생
+                soundManager.playFailSound();
                 gameState = STATE_GAME_OVER;
                 scoreManager.saveHighScore(score);
             }
@@ -332,28 +381,104 @@ public class GamePanel extends JPanel implements Runnable {
         }
     }
     
-    private void render() {
-        if (dbImage == null) {
-            dbImage = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_ARGB);
-            dbg = (Graphics2D) dbImage.getGraphics();
-            dbg.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+    // ★ 핵심: paintComponent로 그리기 통합 (깜빡임 해결)
+    @Override
+    public void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        Graphics2D dbg = (Graphics2D) g;
+        dbg.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        
+        // 배경 그리기 (메뉴가 아닐 때만 이미지 배경)
+        if (gameState != STATE_MENU) {
+            if (backgrounds != null && backgrounds[currentBgIndex] != null) {
+                dbg.drawImage(backgrounds[currentBgIndex], 0, 0, WIDTH, HEIGHT, null);
+            } else {
+                dbg.setColor(Color.BLACK);
+                dbg.fillRect(0, 0, WIDTH, HEIGHT);
+            }
         }
-        if (backgrounds != null && backgrounds[currentBgIndex] != null) dbg.drawImage(backgrounds[currentBgIndex], 0, 0, WIDTH, HEIGHT, null);
-        else { dbg.setColor(Color.BLACK); dbg.fillRect(0, 0, WIDTH, HEIGHT); }
+        
+        // 쉐이크 효과
         int sx = 0, sy = 0;
-        if (shakeTimer > 0) { sx = (int)(Math.random()*10-5); sy = (int)(Math.random()*10-5); dbg.translate(sx, sy); shakeTimer--; }
+        if (shakeTimer > 0) {
+            sx = (int)(Math.random()*10-5);
+            sy = (int)(Math.random()*10-5);
+            dbg.translate(sx, sy);
+        }
         
         switch (gameState) {
             case STATE_MENU: drawMenu(dbg); break;
             case STATE_LEVEL_SELECT: drawLevelSelect(dbg); break;
-            case STATE_PLAY: mapGenerator.draw(dbg); paddle.draw(dbg); dbg.setColor(colorList[ballColorIndex]); ball.draw(dbg); effectManager.draw(dbg); powerUpManager.draw(dbg); drawHUD(dbg); break;
-            case STATE_PAUSED: mapGenerator.draw(dbg); paddle.draw(dbg); dbg.setColor(colorList[ballColorIndex]); ball.draw(dbg); drawPause(dbg); break;
-            case STATE_GAME_OVER: mapGenerator.draw(dbg); paddle.draw(dbg); dbg.setColor(colorList[ballColorIndex]); ball.draw(dbg); effectManager.draw(dbg); drawResult(dbg, "GAME OVER", Color.RED); break;
-            case STATE_VICTORY: mapGenerator.draw(dbg); paddle.draw(dbg); dbg.setColor(colorList[ballColorIndex]); ball.draw(dbg); effectManager.draw(dbg); drawResult(dbg, "STAGE CLEAR!", Color.GREEN); break;
+            case STATE_PLAY:
+                mapGenerator.draw(dbg);
+                paddle.draw(dbg);
+                dbg.setColor(colorList[ballColorIndex]);
+                ball.draw(dbg);
+                effectManager.draw(dbg);
+                powerUpManager.draw(dbg);
+                drawHUD(dbg);
+                break;
+            case STATE_PAUSED:
+                mapGenerator.draw(dbg);
+                paddle.draw(dbg);
+                dbg.setColor(colorList[ballColorIndex]);
+                ball.draw(dbg);
+                drawPause(dbg);
+                break;
+            case STATE_GAME_OVER:
+                mapGenerator.draw(dbg);
+                paddle.draw(dbg);
+                dbg.setColor(colorList[ballColorIndex]);
+                ball.draw(dbg);
+                effectManager.draw(dbg);
+                drawResult(dbg, "GAME OVER", Color.RED);
+                break;
+            case STATE_VICTORY:
+                mapGenerator.draw(dbg);
+                paddle.draw(dbg);
+                dbg.setColor(colorList[ballColorIndex]);
+                ball.draw(dbg);
+                effectManager.draw(dbg);
+                drawResult(dbg, "STAGE CLEAR!", Color.GREEN);
+                break;
             case STATE_SETTINGS: drawSettings(dbg); break;
         }
+        
         if (sx != 0 || sy != 0) dbg.translate(-sx, -sy);
-        draw();
+        
+        if (gameState == STATE_MENU) {
+            Toolkit.getDefaultToolkit().sync(); // GIF 애니메이션 부드럽게
+        }
+    }
+    
+    // ★ 3D 텍스트 그리기
+    private void draw3DText(Graphics2D g2, String text, int x, int y, Color mainColor, Color shadowColor, float size) {
+        if (customFont != null) g2.setFont(customFont.deriveFont(Font.BOLD, size));
+        else g2.setFont(new Font("SansSerif", Font.BOLD, (int)size));
+        
+        g2.setColor(shadowColor);
+        for(int i = 5; i > 0; i--) g2.drawString(text, x + i, y + i);
+        g2.setColor(mainColor);
+        g2.drawString(text, x, y);
+    }
+    
+    // ★ GIF와 3D 텍스트가 적용된 메뉴
+    private void drawMenu(Graphics2D g2) {
+        if (menuGifImage != null) {
+            g2.drawImage(menuGifImage, 0, 0, WIDTH, HEIGHT, this);
+        } else {
+            g2.setColor(Color.BLACK);
+            g2.fillRect(0, 0, WIDTH, HEIGHT);
+        }
+        
+        draw3DText(g2, "샤갈적인 벽돌깨기", WIDTH/2 - 280, 150, Color.YELLOW, Color.DARK_GRAY, 70f);
+        draw3DText(g2, "_학생회의 반란_", WIDTH/2 - 130, 210, Color.WHITE, Color.BLACK, 30f);
+        
+        g2.setColor(Color.CYAN);
+        g2.setFont(new Font("Consolas", Font.BOLD, 20));
+        drawCenteredString(g2, "HIGH SCORE: " + scoreManager.getHighScore(), WIDTH/2, 550);
+        
+        startButton.draw(g2); settingsButton.draw(g2); exitButton.draw(g2);
     }
     
     private void drawLevelSelect(Graphics2D g2) {
@@ -378,17 +503,6 @@ public class GamePanel extends JPanel implements Runnable {
     private void drawHeart(Graphics2D g2, int x, int y) {
         g2.setColor(Color.RED); g2.fillOval(x, y, 10, 10); g2.fillOval(x + 10, y, 10, 10); 
         int[] xp = {x, x + 10, x + 20}; int[] yp = {y + 5, y + 20, y + 5}; g2.fillPolygon(xp, yp, 3);
-    }
-    
-    private void drawMenu(Graphics2D g2) {
-        g2.setColor(new Color(0, 0, 0, 100)); g2.fillRect(0, 0, WIDTH, HEIGHT);
-        g2.setColor(Color.CYAN); g2.setFont(new Font("Consolas", Font.BOLD, 60));
-        drawCenteredString(g2, "BREAKOUT", WIDTH/2, 120);
-        g2.setColor(Color.WHITE); g2.setFont(new Font("Arial", Font.PLAIN, 18));
-        drawCenteredString(g2, "Team C Project - 2025", WIDTH/2, 170);
-        g2.setColor(Color.YELLOW); g2.setFont(new Font("Consolas", Font.BOLD, 20));
-        drawCenteredString(g2, "HIGH SCORE: " + scoreManager.getHighScore(), WIDTH/2, 530);
-        startButton.draw(g2); settingsButton.draw(g2); exitButton.draw(g2);
     }
     
     private void drawSettings(Graphics2D g2) {
@@ -420,11 +534,7 @@ public class GamePanel extends JPanel implements Runnable {
         int tw = g.getFontMetrics().stringWidth(text); g.drawString(text, x - tw / 2, y);
     }
     
-    private void draw() {
-        Graphics g = getGraphics();
-        if (g != null) { g.drawImage(dbImage, 0, 0, null); g.dispose(); }
-    }
-    
+    // 협업 기능: 폭발 로직
     private void triggerExplosion(Brick centerBrick) {
         int ex = (int) (centerBrick.getPosition().x - centerBrick.getWidth());
         int ey = (int) (centerBrick.getPosition().y - centerBrick.getHeight());
