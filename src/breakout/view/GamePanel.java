@@ -121,8 +121,7 @@ public class GamePanel extends JPanel implements Runnable {
         powerUpManager = new PowerUpManager();
         soundManager = new SoundManager(); 
 
-        // ★ [BGM] 생성자에서 바로 브금 가즈아!
-        // assets/Bgm.wav를 무한 루프로 실행함
+
         soundManager.playBGM("Bgm.wav"); 
         
         levelEditor = new LevelEditor();
@@ -184,7 +183,7 @@ public class GamePanel extends JPanel implements Runnable {
         restartButton = new GameButton(centerX, 350, 200, 50, "다시 시작");
         
         menuButton = new GameButton(centerX, 420, 200, 50, "메인 메뉴");
-        shopButton   = new GameButton(centerX, 370, 200, 50, "상점");  
+        shopButton   = new GameButton(centerX, 360, 200, 50, "상점");  
         resumeButton = new GameButton(centerX, 300, 200, 50, "계속하기");
         
         soundButton = new GameButton(centerX, 150, 200, 50, "소리: 켜짐");
@@ -332,6 +331,11 @@ public class GamePanel extends JPanel implements Runnable {
     }
     
     private void update() {
+        if (shopOverlay != null && shopOverlay.isVisible()) {
+            shopOverlay.updateOverlay(mouseHandler);
+            return; 
+        }
+
         if (shakeTimer > 0) shakeTimer--;
         
         if (comboScale > 1.0f) comboScale -= 0.05f;
@@ -595,12 +599,28 @@ public class GamePanel extends JPanel implements Runnable {
     }
     
     private void drawHUD(Graphics2D g2) {
-        g2.setColor(new Color(0, 0, 0, 100)); g2.fillRect(0, 0, WIDTH, 40);
-        g2.setColor(Color.WHITE); g2.setFont(new Font("Consolas", Font.BOLD, 24));
+        g2.setColor(new Color(0, 0, 0, 100));
+        g2.fillRect(0, 0, WIDTH, 40);
+        g2.setColor(Color.WHITE);
+        g2.setFont(new Font("Consolas", Font.BOLD, 24));
         
         g2.drawString("SCORE: " + score, 20, 28);
-        g2.drawString("LIVES:", WIDTH - 180, 28);
-        for (int i = 0; i < lives; i++) drawHeart(g2, WIDTH - 100 + (i * 30), 10);
+        g2.drawString("LIVES:", WIDTH - 200, 28); // 텍스트 위치 약간 조정
+
+        // 생명 표시 로직 수정
+        int maxHearts = 3;
+        int heartsToDraw = Math.min(lives, maxHearts);
+        int extraLives = lives - maxHearts;
+
+        for (int i = 0; i < heartsToDraw; i++) {
+            drawHeart(g2, WIDTH - 120 + (i * 30), 10);
+        }
+
+        if (extraLives > 0) {
+            g2.setColor(Color.yellow);
+            g2.setFont(new Font("Consolas", Font.BOLD, 20));
+            g2.drawString("+" + extraLives, WIDTH - 25, 28);
+        }
         
         // 콤보 텍스트
         if (comboCount >= 2) {
