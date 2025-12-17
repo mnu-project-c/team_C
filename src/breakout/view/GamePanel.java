@@ -18,7 +18,6 @@ import breakout.engine.CollisionDetector;
 import breakout.entity.Ball;
 import breakout.entity.Brick;
 import breakout.entity.Paddle;
-import breakout.entity.ExplosiveBrick;
 import breakout.manager.EffectManager;
 import breakout.manager.InputManager;
 import breakout.manager.MapGenerator;
@@ -365,11 +364,15 @@ public class GamePanel extends JPanel implements Runnable {
     }
     
     private void drawHUD(Graphics2D g2) {
-        g2.setColor(new Color(0, 0, 0, 100)); g2.fillRect(0, 0, WIDTH, 40);
-        g2.setColor(Color.WHITE); g2.setFont(new Font("Consolas", Font.BOLD, 24));
+        g2.setColor(new Color(0, 0, 0, 100));
+        g2.fillRect(0, 0, WIDTH, 40);
+        g2.setColor(Color.WHITE);
+        g2.setFont(new Font("Consolas", Font.BOLD, 24));
         g2.drawString("SCORE: " + score, 20, 28);
         g2.drawString("LIVES:", WIDTH - 180, 28);
-        for (int i = 0; i < lives; i++) drawHeart(g2, WIDTH - 100 + (i * 30), 10);
+        for (int i = 0; i < lives; i++) {
+            drawHeart(g2, WIDTH - 100 + (i * 30), 10);
+        }
     }
     
     private void drawHeart(Graphics2D g2, int x, int y) {

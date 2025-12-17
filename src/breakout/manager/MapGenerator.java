@@ -1,9 +1,7 @@
 package breakout.manager;
 
-import java.awt.Color;
 import java.awt.Graphics2D;
 import java.util.ArrayList;
-import java.util.Random;
 
 import breakout.entity.Brick;
 import breakout.entity.HardBrick;
