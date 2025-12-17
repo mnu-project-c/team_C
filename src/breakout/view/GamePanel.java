@@ -170,23 +170,23 @@ public class GamePanel extends JPanel implements Runnable {
         int centerX = WIDTH / 2 - 100;
         
         // ★ 메인 메뉴 (영어)
-        startButton = new GameButton(centerX, 250, 200, 50, "GAME START");
-        settingsButton = new GameButton(centerX, 320, 200, 50, "SETTINGS");
-        editorButton = new GameButton(centerX, 390, 200, 50, "LEVEL EDITOR");
-        exitButton = new GameButton(centerX, 460, 200, 50, "EXIT GAME");
+        startButton = new GameButton(centerX, 250, 200, 50, "게임시작");
+        settingsButton = new GameButton(centerX, 320, 200, 50, "설정");
+        editorButton = new GameButton(centerX, 390, 200, 50, "사용자지정");
+        exitButton = new GameButton(centerX, 460, 200, 50, "종료");
 
         // 일시정지/결과 화면 (영어)
-        restartButton = new GameButton(centerX, 350, 200, 50, "TRY AGAIN");
-        menuButton = new GameButton(centerX, 420, 200, 50, "MAIN MENU");
-        resumeButton = new GameButton(centerX, 300, 200, 50, "RESUME");
+        restartButton = new GameButton(centerX, 350, 200, 50, "다시시작");
+        menuButton = new GameButton(centerX, 420, 200, 50, "메인 메뉴");
+        resumeButton = new GameButton(centerX, 300, 200, 50, "돌아가기");
         
         // 설정 화면 (영어)
         soundButton = new GameButton(centerX, 150, 200, 50, "SOUND: ON");
-        prevBgButton = new GameButton(centerX - 110, 230, 100, 50, "<< BG");
-        nextBgButton = new GameButton(centerX + 210, 230, 100, 50, "BG >>");
-        ballColorButton = new GameButton(centerX, 310, 200, 50, "BALL: RED");
-        brickColorButton = new GameButton(centerX, 390, 200, 50, "BRICK: YELLOW");
-        backButton = new GameButton(centerX, 500, 200, 50, "BACK");
+        prevBgButton = new GameButton(centerX - 110, 230, 100, 50, "<< 배경");
+        nextBgButton = new GameButton(centerX + 210, 230, 100, 50, "배경 >>");
+        ballColorButton = new GameButton(centerX, 310, 200, 50, "BALL: 빨강");
+        brickColorButton = new GameButton(centerX, 390, 200, 50, "BRICK: 노랑");
+        backButton = new GameButton(centerX, 500, 200, 50, "돌아가기");
         
         // 레벨 선택 (한글)
         lvl1Button = new GameButton(centerX, 200, 200, 50, "1단계");
