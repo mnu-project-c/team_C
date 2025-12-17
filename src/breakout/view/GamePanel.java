@@ -50,6 +50,10 @@ public class GamePanel extends JPanel implements Runnable {
     private boolean running = false;
     private final int FPS = 60;
     
+    //상점
+    private ShopOverlayPanel shopOverlay;
+    private Runnable shopOpener;
+
     private InputManager inputManager;
     private MouseHandler mouseHandler;
     private EffectManager effectManager;
@@ -62,6 +66,7 @@ public class GamePanel extends JPanel implements Runnable {
     private Ball ball;
     private MapGenerator mapGenerator;
     
+    private GameButton shopButton;
     private GameButton startButton, settingsButton, exitButton, editorButton;
     private GameButton restartButton, menuButton;
     private GameButton soundButton, backButton;
@@ -112,8 +117,10 @@ public class GamePanel extends JPanel implements Runnable {
         effectManager = new EffectManager();
         scoreManager = new ScoreManager();
         powerUpManager = new PowerUpManager();
-        soundManager = new SoundManager();
-        soundManager.playBGM("bgm1.wav"); 
+        soundManager = new SoundManager(); 
+
+
+        soundManager.playBGM("Bgm.wav"); 
         
         levelEditor = new LevelEditor();
         
@@ -182,7 +189,9 @@ public class GamePanel extends JPanel implements Runnable {
         exitButton = new GameButton(centerX, startY + gap * 3, 200, 50, "게임 종료");
         
         restartButton = new GameButton(centerX, 350, 200, 50, "다시 시작");
+        
         menuButton = new GameButton(centerX, 420, 200, 50, "메인 메뉴");
+        shopButton   = new GameButton(centerX, 360, 200, 50, "상점");  
         resumeButton = new GameButton(centerX, 300, 200, 50, "계속하기");
         
         soundButton = new GameButton(centerX, 150, 200, 50, "소리: 켜짐");
@@ -276,6 +285,63 @@ public class GamePanel extends JPanel implements Runnable {
         }
     }
 
+        // ===== 상점 오버레이 연동 =====
+    public void setShopOverlay(ShopOverlayPanel shopOverlay) {
+        this.shopOverlay = shopOverlay;
+    }
+
+    public void setShopOpener(Runnable shopOpener) {
+        this.shopOpener = shopOpener;
+    }
+
+    // MainFrame에서 호출용
+    public void openShop() {
+        if (shopOpener != null) shopOpener.run();
+    }
+
+    // 오버레이 열릴 때 게임 일시정지
+    public void pauseForOverlay() {
+        gameState = STATE_PAUSED;
+    }
+
+    // 오버레이 닫힐 때 게임 재개
+    public void resumeFromOverlay() {
+        gameState = STATE_PLAY;
+    }
+
+        // 점수 조회
+    public int getScore() {
+        return score;
+    }
+
+    // 점수 차감
+    public void spendScore(int amount) {
+        score -= amount;
+        if (score < 0) score = 0;
+    }
+
+    // 패들 길이 증가
+    public void applyLongPaddleFromShop() {
+        paddle.expand();
+    }
+
+    // 공 느리게 (속도 감소)
+    public void applySlowBallFromShop() {
+        ball.getVelocity().x *= 0.7;
+        ball.getVelocity().y *= 0.7;
+    }
+
+    // 생명 +1
+    public void addLifeFromShop() {
+        lives++;
+    }
+
+        public MouseHandler getMouseHandler() {
+        return mouseHandler;
+    }
+
+
+
     @Override
     public void run() {
         double drawInterval = 1000000000 / FPS;
@@ -288,11 +354,18 @@ public class GamePanel extends JPanel implements Runnable {
                 if(remainingTime < 0) remainingTime = 0;
                 Thread.sleep((long)remainingTime);
                 nextDrawTime += drawInterval;
-            } catch (InterruptedException e) { e.printStackTrace(); }
+            } catch (InterruptedException e) {
+    e.printStackTrace(); // ✅ 에러 내용을 콘솔에 찍어달라는 뜻이야
+}
         }
     }
     
     private void update() {
+        if (shopOverlay != null && shopOverlay.isVisible()) {
+            shopOverlay.updateOverlay(mouseHandler);
+            return; 
+        }
+
         if (shakeTimer > 0) shakeTimer--;
         if (comboScale > 1.0f) comboScale -= 0.05f;
 
@@ -309,6 +382,10 @@ public class GamePanel extends JPanel implements Runnable {
             case STATE_SETTINGS: updateSettings(); break;
             case STATE_EDITOR: updateEditor(); break;
         }
+
+            if (shopOverlay != null && shopOverlay.isVisible()) {
+                shopOverlay.updateOverlay(mouseHandler);
+            }
     }
     
     private void updateMenu() {
@@ -412,10 +489,28 @@ public class GamePanel extends JPanel implements Runnable {
     }
     
     private void updatePaused() {
-        resumeButton.update(mouseHandler); menuButton.update(mouseHandler);
-        if (resumeButton.isClicked(mouseHandler)) { soundManager.playClickSound(); gameState = STATE_PLAY; }
-        if (menuButton.isClicked(mouseHandler)) { soundManager.playClickSound(); gameState = STATE_MENU; }
+        resumeButton.update(mouseHandler);
+        shopButton.update(mouseHandler);   // ✅ 추가
+        menuButton.update(mouseHandler);
+
+        if (resumeButton.isClicked(mouseHandler)) {
+            soundManager.playClickSound();
+            gameState = STATE_PLAY;
+        }
+
+        if (shopButton.isClicked(mouseHandler)) {   // ✅ 추가
+            soundManager.playClickSound();
+            openShop();
+        }
+
+        if (menuButton.isClicked(mouseHandler)) {
+            soundManager.playClickSound();
+            gameState = STATE_MENU;
+        }
     }
+
+
+
     
     private void updateResult() {
         restartButton.update(mouseHandler); menuButton.update(mouseHandler);
@@ -461,6 +556,7 @@ public class GamePanel extends JPanel implements Runnable {
         if (backButton.isClicked(mouseHandler)) { soundManager.playClickSound(); gameState = STATE_MENU; }
     }
     
+    // ★ [BGM] 배경 변경에 따라 브금 변경하는 로직
     private void changeBackgroundBGM() {
         if (isSoundOn) {
             String bgmName = "bgm" + (currentBgIndex + 1) + ".wav";
@@ -567,12 +663,27 @@ public class GamePanel extends JPanel implements Runnable {
     }
     
     private void drawHUD(Graphics2D g2) {
-        g2.setColor(new Color(0, 0, 0, 100)); g2.fillRect(0, 0, WIDTH, 40);
-        g2.setColor(Color.WHITE); g2.setFont(new Font("Consolas", Font.BOLD, 24));
+        g2.setColor(new Color(0, 0, 0, 100));
+        g2.fillRect(0, 0, WIDTH, 40);
+        g2.setColor(Color.WHITE);
+        g2.setFont(new Font("Consolas", Font.BOLD, 24));
+        
         g2.drawString("SCORE: " + score, 20, 28);
-        g2.drawString("LIVES:", WIDTH - 180, 28);
-        for (int i = 0; i < lives; i++) {
-            drawHeart(g2, WIDTH - 100 + (i * 30), 10);
+        g2.drawString("LIVES:", WIDTH - 200, 28); // 텍스트 위치 약간 조정
+
+        // 생명 표시 로직 수정
+        int maxHearts = 3;
+        int heartsToDraw = Math.min(lives, maxHearts);
+        int extraLives = lives - maxHearts;
+
+        for (int i = 0; i < heartsToDraw; i++) {
+            drawHeart(g2, WIDTH - 120 + (i * 30), 10);
+        }
+
+        if (extraLives > 0) {
+            g2.setColor(Color.yellow);
+            g2.setFont(new Font("Consolas", Font.BOLD, 20));
+            g2.drawString("+" + extraLives, WIDTH - 25, 28);
         }
         
         if (comboCount >= 2) {
@@ -611,17 +722,12 @@ public class GamePanel extends JPanel implements Runnable {
     private void drawPause(Graphics2D g2) {
         g2.setColor(new Color(0, 0, 0, 150)); g2.fillRect(0, 0, WIDTH, HEIGHT);
         g2.setColor(Color.ORANGE); g2.setFont(new Font("Arial", Font.BOLD, 50));
-        drawCenteredString(g2, "STOP", WIDTH/2, 200);
-        resumeButton.draw(g2, customFont); menuButton.draw(g2, customFont);
+        drawCenteredString(g2, "PAUSED", WIDTH/2, 200); 
+        resumeButton.draw(g2, customFont); menuButton.draw(g2, customFont);shopButton.draw(g2, customFont);
     }
     
-    private void drawResult(Graphics2D g2, String title, Color color) {
-        g2.setColor(new Color(0, 0, 0, 180)); g2.fillRect(0, 0, WIDTH, HEIGHT);
-        g2.setColor(color); g2.setFont(new Font("Arial", Font.BOLD, 50));
-        drawCenteredString(g2, title, WIDTH/2, 200);
         g2.setColor(Color.WHITE); g2.setFont(new Font("Consolas", Font.BOLD, 30));
         drawCenteredString(g2, "Final Score: " + score, WIDTH/2, 280);
-        restartButton.draw(g2, customFont); menuButton.draw(g2, customFont);
     }
     
     private void drawCenteredString(Graphics2D g, String text, int x, int y) {
