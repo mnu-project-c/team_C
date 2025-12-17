@@ -20,6 +20,7 @@ import breakout.entity.Brick;
 import breakout.entity.Paddle;
 import breakout.manager.EffectManager;
 import breakout.manager.InputManager;
+import breakout.manager.LevelEditor;
 import breakout.manager.MapGenerator;
 import breakout.manager.MouseHandler;
 import breakout.manager.PowerUpManager;
@@ -38,6 +39,7 @@ public class GamePanel extends JPanel implements Runnable {
     public static final int STATE_SETTINGS = 4;
     public static final int STATE_PAUSED = 5;
     public static final int STATE_LEVEL_SELECT = 6;
+    public static final int STATE_EDITOR = 7;
     
     private BufferedImage dbImage;
     private Graphics2D dbg;
@@ -51,6 +53,7 @@ public class GamePanel extends JPanel implements Runnable {
     private ScoreManager scoreManager;
     private PowerUpManager powerUpManager;
     private SoundManager soundManager;
+    private LevelEditor levelEditor;
     
     private Paddle paddle;
     private Ball ball;
@@ -63,6 +66,8 @@ public class GamePanel extends JPanel implements Runnable {
     private GameButton prevBgButton, nextBgButton;
     private GameButton ballColorButton, brickColorButton;
     private GameButton lvl1Button, lvl2Button, lvl3Button, lvlBackButton;
+    private GameButton editorButton;
+    private GameButton customPlayButton;
     
     private int gameState = STATE_MENU;
     private int score = 0;
@@ -124,6 +129,8 @@ public class GamePanel extends JPanel implements Runnable {
         settingsButton = new GameButton(centerX, 320, 200, 50, "SETTINGS");
         exitButton = new GameButton(centerX, 390, 200, 50, "EXIT GAME");
         
+        editorButton = new GameButton(centerX, 390, 200, 50, "LEVEL EDITOR");
+        
         restartButton = new GameButton(centerX, 350, 200, 50, "TRY AGAIN");
         menuButton = new GameButton(centerX, 420, 200, 50, "MAIN MENU");
         resumeButton = new GameButton(centerX, 300, 200, 50, "RESUME");
@@ -139,6 +146,10 @@ public class GamePanel extends JPanel implements Runnable {
         lvl2Button = new GameButton(centerX, 270, 200, 50, "LEVEL 2");
         lvl3Button = new GameButton(centerX, 340, 200, 50, "LEVEL 3");
         lvlBackButton = new GameButton(centerX, 450, 200, 50, "BACK");
+
+        customPlayButton = new GameButton(centerX, 410, 200, 50, "CUSTOM MAP");
+
+        levelEditor = new LevelEditor();
     }
     
     private void initGameObjects() {
@@ -165,7 +176,11 @@ public class GamePanel extends JPanel implements Runnable {
     private void resetGame() {
         paddle = new Paddle(WIDTH / 2 - 50, HEIGHT - 60, inputManager);
         ball = new Ball(WIDTH / 2 - 10, HEIGHT - 100);
-        mapGenerator.loadLevel(currentLevel);
+        if (currentLevel != 0) {
+            mapGenerator.loadLevel(currentLevel);
+        } else {
+            mapGenerator.bricks = levelEditor.getGeneratedBricks();
+        }
         
         powerUpManager.clear();
         
@@ -226,6 +241,7 @@ public class GamePanel extends JPanel implements Runnable {
             case STATE_GAME_OVER:
             case STATE_VICTORY: updateResult(); break;
             case STATE_SETTINGS: updateSettings(); break;
+            case STATE_EDITOR: updateEditor(); break;
         }
     }
     
@@ -233,8 +249,10 @@ public class GamePanel extends JPanel implements Runnable {
         startButton.update(mouseHandler);
         settingsButton.update(mouseHandler);
         exitButton.update(mouseHandler);
+        editorButton.update(mouseHandler);
         if (startButton.isClicked(mouseHandler)) gameState = STATE_LEVEL_SELECT;
         if (settingsButton.isClicked(mouseHandler)) gameState = STATE_SETTINGS;
+        if (editorButton.isClicked(mouseHandler)) gameState = STATE_EDITOR;
         if (exitButton.isClicked(mouseHandler)) System.exit(0);
     }
     
@@ -242,13 +260,26 @@ public class GamePanel extends JPanel implements Runnable {
         lvl1Button.update(mouseHandler);
         lvl2Button.update(mouseHandler);
         lvl3Button.update(mouseHandler);
+        customPlayButton.update(mouseHandler);
         lvlBackButton.update(mouseHandler);
         if (lvl1Button.isClicked(mouseHandler)) startGameWithLevel(1);
         if (lvl2Button.isClicked(mouseHandler)) startGameWithLevel(2);
         if (lvl3Button.isClicked(mouseHandler)) startGameWithLevel(3);
+        if (customPlayButton.isClicked(mouseHandler)) {
+            startGameWithLevel(0); // 0번은 커스텀 레벨
+        }
         if (lvlBackButton.isClicked(mouseHandler)) gameState = STATE_MENU;
     }
     
+    private void updateEditor() {
+        levelEditor.update(mouseHandler);
+        
+        // 에디터의 EXIT 버튼이 눌렸는지 확인
+        if (levelEditor.getExitButton().isClicked(mouseHandler)) {
+            gameState = STATE_MENU;
+        }
+    }
+
     private void updatePlay() {
         if (inputManager.escape && !wasEscPressed) {
             gameState = STATE_PAUSED;
@@ -445,6 +476,7 @@ public class GamePanel extends JPanel implements Runnable {
                 drawResult(dbg, "STAGE CLEAR!", Color.GREEN);
                 break;
             case STATE_SETTINGS: drawSettings(dbg); break;
+            case STATE_EDITOR: levelEditor.draw(dbg); break;
         }
         
         if (shakeTimer > 0 || (shakeX != 0 || shakeY != 0)) {
@@ -463,6 +495,7 @@ public class GamePanel extends JPanel implements Runnable {
         lvl1Button.draw(g2);
         lvl2Button.draw(g2);
         lvl3Button.draw(g2);
+        customPlayButton.draw(g2);
         lvlBackButton.draw(g2);
     }
     
@@ -518,6 +551,7 @@ public class GamePanel extends JPanel implements Runnable {
         drawCenteredString(g2, "HIGH SCORE: " + scoreManager.getHighScore(), WIDTH/2, 530);
         startButton.draw(g2);
         settingsButton.draw(g2);
+        editorButton.draw(g2);
         exitButton.draw(g2);
     }
     
