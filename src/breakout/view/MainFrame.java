@@ -21,15 +21,13 @@ public class MainFrame extends JFrame {
 
         gamePanel.setShopOverlay(shopOverlay);
 
-        // GamePanel이 "상점 열기" 요청하면 MainFrame이 오버레이를 띄워줌
         gamePanel.setShopOpener(() -> {
-            gamePanel.pauseForOverlay();     // 게임 업데이트 멈춤
-            shopOverlay.refreshTexts();      // 가격/점수 표시 최신화
+            gamePanel.pauseForOverlay();
+            shopOverlay.refreshTexts();
             shopOverlay.setVisible(true);
             shopOverlay.requestFocusInWindow();
         });
 
-        // ShopOverlay가 닫힐 때 처리
         shopOverlay.setOnClose(() -> {
             shopOverlay.setVisible(false);
             gamePanel.resumeFromOverlay();
@@ -37,6 +35,7 @@ public class MainFrame extends JFrame {
         });
 
         JLayeredPane layeredPane = new JLayeredPane();
+        layeredPane.setLayout(null); // ★ 추가
         layeredPane.setPreferredSize(new Dimension(GamePanel.WIDTH, GamePanel.HEIGHT));
         layeredPane.add(gamePanel, JLayeredPane.DEFAULT_LAYER);
         layeredPane.add(shopOverlay, JLayeredPane.MODAL_LAYER);
