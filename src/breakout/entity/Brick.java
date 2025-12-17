@@ -1,4 +1,4 @@
-package kr.ac.mnu.c_team.breakout.entity;
+package breakout.entity;
 
 import java.awt.BasicStroke;
 import java.awt.Color;

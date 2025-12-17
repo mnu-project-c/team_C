@@ -1,6 +1,6 @@
-package kr.ac.mnu.c_team.breakout.entity;
+package breakout.entity;
 
-import kr.ac.mnu.c_team.breakout.view.GamePanel;
+import breakout.view.GamePanel;
 
 public class ExpandPaddlePowerUp extends PowerUp {
     public ExpandPaddlePowerUp(double x, double y) {

@@ -1,4 +1,4 @@
-package kr.ac.mnu.c_team.breakout.engine;
+package breakout.engine;
 
 /**
  * 2차원 벡터 연산을 담당하는 클래스.

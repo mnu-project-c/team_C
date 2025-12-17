@@ -1,4 +1,4 @@
-package kr.ac.mnu.c_team.breakout.view;
+package breakout.view;
 
 import javax.swing.JFrame;
 

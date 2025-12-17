@@ -1,11 +1,11 @@
-package kr.ac.mnu.c_team.breakout.entity;
+package breakout.entity;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.RadialGradientPaint;
 import java.awt.geom.Point2D;
-import kr.ac.mnu.c_team.breakout.engine.Vector2D;
-import kr.ac.mnu.c_team.breakout.view.GamePanel;
+import breakout.engine.Vector2D;
+import breakout.view.GamePanel;
 
 public class Ball extends GameObject {
     

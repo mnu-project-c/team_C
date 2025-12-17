@@ -1,11 +1,11 @@
-package kr.ac.mnu.c_team.breakout.manager;
+package breakout.manager;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-import kr.ac.mnu.c_team.breakout.entity.Particle;
+import breakout.entity.Particle;
 
 public class EffectManager {
     

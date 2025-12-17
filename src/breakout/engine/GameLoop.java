@@ -1,21 +1,5 @@
-package kr.ac.mnu.c_team.breakout.engine;
+package breakout.engine;
 
-/**
- * 고정 FPS 기반 게임 루프를 제공하는 클래스.
- * 
- * 별도의 스레드에서 동작하며, 지정한 FPS에 맞춰
- * Updatable 객체의 update()를 반복 호출한다.
- *
- * 예:
- *   GameLoop loop = new GameLoop(gamePanel, 60);
- *   loop.start();
- *
- * gamePanel은 Updatable을 구현하고 있어야 한다.
- * 
- * @author 조한흠
- * @version 1.0
- * @since 2025-12-16
- */
 public class GameLoop implements Runnable {
 
     /** 루프 대상 (게임 상태를 갱신하는 객체) */

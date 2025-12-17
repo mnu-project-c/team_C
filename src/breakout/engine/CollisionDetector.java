@@ -1,27 +1,14 @@
-package kr.ac.mnu.c_team.breakout.engine;
+package breakout.engine;
 
 import java.awt.Rectangle;
 import java.util.List;
 
-import kr.ac.mnu.c_team.breakout.entity.Ball;
-import kr.ac.mnu.c_team.breakout.entity.Brick;
-import kr.ac.mnu.c_team.breakout.entity.GameObject;
-import kr.ac.mnu.c_team.breakout.entity.Paddle;
-import kr.ac.mnu.c_team.breakout.entity.Collidable;
+import breakout.entity.Ball;
+import breakout.entity.Brick;
+import breakout.entity.GameObject;
+import breakout.entity.Paddle;
+import breakout.entity.Collidable;
 
-/**
- * 충돌 감지 및 기본 반응(반사)을 담당하는 유틸리티 클래스.
- *
- * - 공 vs 벽
- * - 공 vs 패들
- * - 공 vs 벽돌
- *
- * 을 단순한 AABB 충돌 + 반사 로직으로 처리한다.
- *
- * @author 조한흠
- * @version 1.0
- * @since 2025-12-16
- */
 public final class CollisionDetector {
 
     /** 외부에서 인스턴스 생성 방지 */

@@ -1,8 +1,8 @@
-package kr.ac.mnu.c_team.breakout.entity;
+package breakout.entity;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
-import kr.ac.mnu.c_team.breakout.view.GamePanel;
+import breakout.view.GamePanel;
 
 public abstract class PowerUp extends GameObject {
     

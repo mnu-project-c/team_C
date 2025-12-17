@@ -1,4 +1,4 @@
-package kr.ac.mnu.c_team.breakout.manager;
+package breakout.manager;
 
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;

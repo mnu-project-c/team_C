@@ -1,10 +1,10 @@
-package kr.ac.mnu.c_team.breakout.view;
+package breakout.view;
 
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
-import kr.ac.mnu.c_team.breakout.manager.MouseHandler;
+import breakout.manager.MouseHandler;
 
 public class GameButton {
 

@@ -1,4 +1,5 @@
-package kr.ac.mnu.c_team.breakout.engine;
+package breakout.engine;
+
 
 interface Updatable {
 	void update();

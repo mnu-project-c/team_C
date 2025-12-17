@@ -1,4 +1,4 @@
-package kr.ac.mnu.c_team.breakout.view;
+package breakout.view;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -14,17 +14,17 @@ import java.io.IOException;
 import javax.imageio.ImageIO;
 import javax.swing.JPanel;
 
-import kr.ac.mnu.c_team.breakout.engine.CollisionDetector;
-import kr.ac.mnu.c_team.breakout.entity.Ball;
-import kr.ac.mnu.c_team.breakout.entity.Brick;
-import kr.ac.mnu.c_team.breakout.entity.Paddle;
-import kr.ac.mnu.c_team.breakout.entity.ExplosiveBrick;
-import kr.ac.mnu.c_team.breakout.manager.EffectManager;
-import kr.ac.mnu.c_team.breakout.manager.InputManager;
-import kr.ac.mnu.c_team.breakout.manager.MapGenerator;
-import kr.ac.mnu.c_team.breakout.manager.MouseHandler;
-import kr.ac.mnu.c_team.breakout.manager.PowerUpManager;
-import kr.ac.mnu.c_team.breakout.manager.ScoreManager;
+import breakout.engine.CollisionDetector;
+import breakout.entity.Ball;
+import breakout.entity.Brick;
+import breakout.entity.Paddle;
+import breakout.entity.ExplosiveBrick;
+import breakout.manager.EffectManager;
+import breakout.manager.InputManager;
+import breakout.manager.MapGenerator;
+import breakout.manager.MouseHandler;
+import breakout.manager.PowerUpManager;
+import breakout.manager.ScoreManager;
 
 
 public class GamePanel extends JPanel implements Runnable {
@@ -150,7 +150,7 @@ public class GamePanel extends JPanel implements Runnable {
     private void applyCustomColors() {
         Color targetBrickColor = colorList[brickColorIndex];
         for (Brick b : mapGenerator.bricks) {
-            if (b instanceof kr.ac.mnu.c_team.breakout.entity.NormalBrick) {
+            if (b instanceof breakout.entity.NormalBrick) {
             	b.color = targetBrickColor;
             }
         }
@@ -279,14 +279,14 @@ public class GamePanel extends JPanel implements Runnable {
                 if (ball.getBounds().intersects(brick.getBounds())) {
                     
                     // 1. 물리 반사 (앞서 적용한 코드)
-                    kr.ac.mnu.c_team.breakout.engine.CollisionDetector.resolveBallVsRect(ball, brick);
+                    breakout.engine.CollisionDetector.resolveBallVsRect(ball, brick);
 
                     // 2. 벽돌 타격
                     brick.hit();
                     score += brick.scoreValue;
                     
                     // 3. ★ 폭발 벽돌인지 확인 후 폭발 실행
-                    if (brick instanceof kr.ac.mnu.c_team.breakout.entity.ExplosiveBrick) {
+                    if (brick instanceof breakout.entity.ExplosiveBrick) {
                         triggerExplosion(brick);
                     }
 
@@ -296,7 +296,7 @@ public class GamePanel extends JPanel implements Runnable {
                     effectManager.createExplosion(cx, cy, brick.color);
                     powerUpManager.maybeSpawn(cx, cy);
                     
-                    if (!(brick instanceof kr.ac.mnu.c_team.breakout.entity.ExplosiveBrick)) {
+                    if (!(brick instanceof breakout.entity.ExplosiveBrick)) {
                          startShake(5); // 일반 벽돌은 살짝만 흔들림
                     }
                     

@@ -1,15 +1,15 @@
-package kr.ac.mnu.c_team.breakout.manager;
+package breakout.manager;
 
 import java.awt.Graphics2D;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Random;
 
-import kr.ac.mnu.c_team.breakout.entity.ExpandPaddlePowerUp;
-import kr.ac.mnu.c_team.breakout.entity.ExtraLifePowerUp;
-import kr.ac.mnu.c_team.breakout.entity.Paddle;
-import kr.ac.mnu.c_team.breakout.entity.PowerUp;
-import kr.ac.mnu.c_team.breakout.view.GamePanel;
+import breakout.entity.ExpandPaddlePowerUp;
+import breakout.entity.ExtraLifePowerUp;
+import breakout.entity.Paddle;
+import breakout.entity.PowerUp;
+import breakout.view.GamePanel;
 
 public class PowerUpManager {
     

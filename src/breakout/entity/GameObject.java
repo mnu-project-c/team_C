@@ -1,8 +1,8 @@
-package kr.ac.mnu.c_team.breakout.entity;
+package breakout.entity;
 
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
-import kr.ac.mnu.c_team.breakout.engine.Vector2D;
+import breakout.engine.Vector2D;
 
 public abstract class GameObject implements Collidable {
     protected Vector2D position;

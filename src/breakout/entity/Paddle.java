@@ -1,9 +1,9 @@
-package kr.ac.mnu.c_team.breakout.entity;
+package breakout.entity;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
-import kr.ac.mnu.c_team.breakout.manager.InputManager;
-import kr.ac.mnu.c_team.breakout.view.GamePanel;
+import breakout.manager.InputManager;
+import breakout.view.GamePanel;
 
 public class Paddle extends GameObject {
 

@@ -1,16 +1,16 @@
-package kr.ac.mnu.c_team.breakout.manager;
+package breakout.manager;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.util.ArrayList;
 import java.util.Random;
 
-import kr.ac.mnu.c_team.breakout.entity.Brick;
-import kr.ac.mnu.c_team.breakout.entity.HardBrick;
-import kr.ac.mnu.c_team.breakout.entity.MediumBrick;
-import kr.ac.mnu.c_team.breakout.entity.NormalBrick;
+import breakout.entity.Brick;
+import breakout.entity.HardBrick;
+import breakout.entity.MediumBrick;
+import breakout.entity.NormalBrick;
 
-import kr.ac.mnu.c_team.breakout.view.GamePanel;
+import breakout.view.GamePanel;
 
 public class MapGenerator {
     
@@ -73,7 +73,7 @@ public class MapGenerator {
                     // ★ 확률 설정 구간
                     // 10% 확률 (0.0 ~ 0.1) -> 폭발 벽돌
                     if (chance < 0.1) {
-                        bricks.add(new kr.ac.mnu.c_team.breakout.entity.ExplosiveBrick(x, y, 80, 30));
+                        bricks.add(new breakout.entity.ExplosiveBrick(x, y, 80, 30));
                     } 
                     // 30% 확률 (0.1 ~ 0.4) -> 중간 벽돌 (Medium)
                     else if (chance < 0.4) {
