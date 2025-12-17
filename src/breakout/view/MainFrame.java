@@ -19,6 +19,9 @@ public class MainFrame extends JFrame {
         shopOverlay.setBounds(0, 0, GamePanel.WIDTH, GamePanel.HEIGHT);
         shopOverlay.setVisible(false);
 
+        shopOverlay.addMouseListener(gamePanel.getMouseHandler());
+        shopOverlay.addMouseMotionListener(gamePanel.getMouseHandler());
+
         gamePanel.setShopOverlay(shopOverlay);
 
         gamePanel.setShopOpener(() -> {
