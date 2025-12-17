@@ -15,12 +15,11 @@ public class SoundManager {
 
     private static final String SOUND_PATH = "assets/";
     
-    // 파일명 상수
+    // 네 assets 폴더에 실제 존재하는 파일들만 등록
     public static final String SOUND_HIT = "hit.wav"; 
-    public static final String SOUND_BREAK = "break.wav";   
-    public static final String SOUND_FAIL = "fail.wav";       // [NEW] 하트 1개 잃었을 때
-    public static final String SOUND_GAMEOVER = "gameover.wav"; // [NEW] 완전 게임 오버
-    public static final String SOUND_VICTORY = "victory.wav";
+    public static final String SOUND_FAIL = "Fail.wav";       // 대문자 F 주의
+    public static final String SOUND_EXPLODE = "explode.wav"; // 깨질 때 소리
+    public static final String SOUND_CLICK = "click.wav";     // 버튼 소리
 
     private Map<String, Clip> clipCache;
     private Clip currentBgmClip;
@@ -37,15 +36,10 @@ public class SoundManager {
         try { loadClip(fileName); } catch (Exception e) {}
     }
 
-    // 편의 메소드들
     public void playHitSound() { playSound(SOUND_HIT); }
-    public void playBreakSound() { playSound(SOUND_BREAK); }
-    
-    // ★ [핵심] 하트 잃었을 때 소리
     public void playFailSound() { playSound(SOUND_FAIL); } 
-    
-    // ★ [핵심] 게임 오버 소리
-    public void playGameOverSound() { playSound(SOUND_GAMEOVER); }
+    public void playExplodeSound() { playSound(SOUND_EXPLODE); } 
+    public void playClickSound() { playSound(SOUND_CLICK); }
 
     public void playSound(String fileName) {
         if (isMuted) return;
@@ -56,7 +50,9 @@ public class SoundManager {
                 clip.setFramePosition(0); 
                 clip.start();
             }
-        } catch (Exception e) {}
+        } catch (Exception e) {
+            // 파일이 없어도 에러 안 뜨게 조용히 넘어감
+        }
     }
 
     public void playBGM(String fileName) {
@@ -94,8 +90,6 @@ public class SoundManager {
     private void setVolume(Clip clip, float volume) {
         if (clip.isControlSupported(FloatControl.Type.MASTER_GAIN)) {
             FloatControl gainControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
-            if (volume > 6.0f) volume = 6.0f;
-            if (volume < -80.0f) volume = -80.0f;
             gainControl.setValue(volume);
         }
     }
