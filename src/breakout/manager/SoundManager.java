@@ -11,61 +11,44 @@ import javax.sound.sampled.FloatControl;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.UnsupportedAudioFileException;
 
-/**
- * 게임의 모든 오디오 리소스를 관리하는 사운드 매니저 클래스.
- * <p>
- * 효과음(.wav)의 로딩, 재생, 볼륨 조절 및 메모리 관리를 담당한다.
- * 배경음악(BGM) 전환 기능을 포함한다.
- * </p>
- * @author 박한결
- * @version 1.5
- * @since 2025-12-17
- */
 public class SoundManager {
 
-    // 사운드 파일이 위치한 기본 경로 (프로젝트 최상위 assets 폴더)
     private static final String SOUND_PATH = "assets/";
     
-    // 파일명 상수 (assets 폴더에 이 이름대로 파일이 있어야 함!)
+    // 파일명 상수
     public static final String SOUND_HIT = "hit.wav"; 
     public static final String SOUND_BREAK = "break.wav";   
-    public static final String SOUND_GAMEOVER = "gameover.wav"; 
+    public static final String SOUND_FAIL = "fail.wav";       // [NEW] 하트 1개 잃었을 때
+    public static final String SOUND_GAMEOVER = "gameover.wav"; // [NEW] 완전 게임 오버
     public static final String SOUND_VICTORY = "victory.wav";
 
-    // 오디오 클립 캐시
     private Map<String, Clip> clipCache;
-    
-    // 현재 재생 중인 BGM 클립 (제어를 위해 따로 저장)
     private Clip currentBgmClip;
-
     private boolean isMuted = false;
     private float masterVolume = -10.0f;
 
     public SoundManager() {
         this.clipCache = new HashMap<>();
-        // 버벅임 방지를 위해 주요 사운드 미리 로딩
         preLoadSound(SOUND_HIT);
         System.out.println("[SoundManager] Audio System Initialized.");
     }
     
     private void preLoadSound(String fileName) {
-        try {
-            loadClip(fileName);
-        } catch (Exception e) {
-            System.out.println("[SoundManager] Warning: " + fileName + " not found.");
-        }
+        try { loadClip(fileName); } catch (Exception e) {}
     }
 
-    // 편의 메소드들 (GamePanel에서 이것만 부르면 됨)
+    // 편의 메소드들
     public void playHitSound() { playSound(SOUND_HIT); }
     public void playBreakSound() { playSound(SOUND_BREAK); }
+    
+    // ★ [핵심] 하트 잃었을 때 소리
+    public void playFailSound() { playSound(SOUND_FAIL); } 
+    
+    // ★ [핵심] 게임 오버 소리
+    public void playGameOverSound() { playSound(SOUND_GAMEOVER); }
 
-    /**
-     * 효과음 재생 (중첩 가능)
-     */
     public void playSound(String fileName) {
         if (isMuted) return;
-
         try {
             Clip clip = loadClip(fileName);
             if (clip != null) {
@@ -73,66 +56,38 @@ public class SoundManager {
                 clip.setFramePosition(0); 
                 clip.start();
             }
-        } catch (Exception e) {
-            // 효과음 에러는 무시 (게임 진행 방해 X)
-        }
+        } catch (Exception e) {}
     }
 
-    /**
-     * 배경 음악 재생 (기존 음악은 정지됨)
-     */
     public void playBGM(String fileName) {
         if (isMuted) return;
-
-        // 1. 기존에 재생 중인 BGM이 있다면 끈다.
         stopBGM();
-
         try {
-            // 2. 새 BGM 파일 로드
             Clip clip = loadClip(fileName);
             if (clip != null) {
-                setVolume(clip, masterVolume - 5.0f); // 배경음은 조금 작게
-                clip.loop(Clip.LOOP_CONTINUOUSLY);    // 무한 반복
+                setVolume(clip, masterVolume - 5.0f);
+                clip.loop(Clip.LOOP_CONTINUOUSLY);
                 clip.start();
-                
-                // 3. 현재 BGM으로 등록
                 currentBgmClip = clip;
             }
-        } catch (Exception e) {
-            System.err.println("[SoundManager] Failed to play BGM: " + fileName);
-        }
+        } catch (Exception e) {}
     }
     
-    /**
-     * 현재 재생 중인 BGM을 정지한다.
-     */
     public void stopBGM() {
         if (currentBgmClip != null) {
-            if (currentBgmClip.isRunning()) {
-                currentBgmClip.stop();
-            }
+            if (currentBgmClip.isRunning()) currentBgmClip.stop();
             currentBgmClip = null;
         }
     }
 
     private Clip loadClip(String fileName) throws UnsupportedAudioFileException, IOException, LineUnavailableException {
-        // 캐시에 있으면 반환
-        if (clipCache.containsKey(fileName)) {
-            return clipCache.get(fileName);
-        }
-
+        if (clipCache.containsKey(fileName)) return clipCache.get(fileName);
         File file = new File(SOUND_PATH + fileName);
-        if (!file.exists()) {
-            return null;
-        }
-
+        if (!file.exists()) return null;
         AudioInputStream ais = AudioSystem.getAudioInputStream(file);
         Clip clip = AudioSystem.getClip();
         clip.open(ais);
-        
         clipCache.put(fileName, clip);
-        System.out.println("[SoundManager] Loaded new sound: " + fileName);
-        
         return clip;
     }
 
@@ -149,18 +104,12 @@ public class SoundManager {
         stopBGM();
         for (String key : clipCache.keySet()) {
             Clip clip = clipCache.get(key);
-            if (clip != null && clip.isRunning()) {
-                clip.stop();
-            }
+            if (clip != null && clip.isRunning()) clip.stop();
         }
     }
 
     public void setMute(boolean muted) {
         this.isMuted = muted;
-        if (muted) {
-            stopAll();
-        } else {
-            // 음소거 해제 시 처리는 필요하면 추가
-        }
+        if (muted) stopAll();
     }
 }

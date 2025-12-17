@@ -25,14 +25,13 @@ import breakout.manager.MapGenerator;
 import breakout.manager.MouseHandler;
 import breakout.manager.PowerUpManager;
 import breakout.manager.ScoreManager;
-import breakout.manager.SoundManager; // [추가] 사운드 매니저 임포트
+import breakout.manager.SoundManager;
 
 public class GamePanel extends JPanel implements Runnable {
     
     public static final int WIDTH = 800;
     public static final int HEIGHT = 600;
     
-    // 상태 상수
     public static final int STATE_MENU = 0;
     public static final int STATE_PLAY = 1;
     public static final int STATE_GAME_OVER = 2;
@@ -52,13 +51,12 @@ public class GamePanel extends JPanel implements Runnable {
     private EffectManager effectManager;
     private ScoreManager scoreManager;
     private PowerUpManager powerUpManager;
-    private SoundManager soundManager; // [추가] 사운드 매니저 선언
+    private SoundManager soundManager;
     
     private Paddle paddle;
     private Ball ball;
     private MapGenerator mapGenerator;
     
-    // UI 버튼들
     private GameButton startButton, settingsButton, exitButton;
     private GameButton restartButton, menuButton;
     private GameButton soundButton, backButton;
@@ -102,7 +100,6 @@ public class GamePanel extends JPanel implements Runnable {
         scoreManager = new ScoreManager();
         powerUpManager = new PowerUpManager();
         
-        // [추가] 사운드 매니저 생성 및 1번 배경음악 재생
         soundManager = new SoundManager();
         soundManager.playBGM("bgm1.wav"); 
         
@@ -189,10 +186,8 @@ public class GamePanel extends JPanel implements Runnable {
         try { Thread.sleep(500); } catch (Exception e) {}
     }
     
-    // 아이템 효과
     public void addLife() { lives++; }
     public void expandPaddle() { paddle.expand(); }
-    
     public void startShake(int duration) { this.shakeTimer = duration; }
     
     public void startGame() {
@@ -224,7 +219,6 @@ public class GamePanel extends JPanel implements Runnable {
     private void update() {
         inputManager.update();
         effectManager.update(); 
-        
         switch (gameState) {
             case STATE_MENU: updateMenu(); break;
             case STATE_LEVEL_SELECT: updateLevelSelect(); break;
@@ -268,27 +262,20 @@ public class GamePanel extends JPanel implements Runnable {
         ball.update();
         powerUpManager.update(this, paddle);
         
-        // 패들 충돌
         if (CollisionDetector.isColliding(ball, paddle)) {
             CollisionDetector.handlePaddleCollision(ball, paddle);
-            
-            // 공이 위로 튕겼을 때만 소리 & 이펙트
             if (ball.getVelocity().y < 0) { 
                 startShake(5);
-                soundManager.playHitSound(); // ★ [추가] 뽀잉 소리!
+                soundManager.playHitSound(); 
             }
         }
         
         for (Brick brick : mapGenerator.bricks) {
             if (!brick.isDestroyed) {
                 if (ball.getBounds().intersects(brick.getBounds())) {
-                    
                     breakout.engine.CollisionDetector.resolveBallVsRect(ball, brick);
-
                     brick.hit();
                     score += brick.scoreValue;
-                    
-                    // ★ [추가] 벽돌 깨지는 소리
                     soundManager.playBreakSound();
                     
                     if (brick instanceof breakout.entity.ExplosiveBrick) {
@@ -303,21 +290,23 @@ public class GamePanel extends JPanel implements Runnable {
                     if (!(brick instanceof breakout.entity.ExplosiveBrick)) {
                          startShake(5); 
                     }
-                    
                     break;
                 }
             }
         }
         
+        // ★ [여기가 핵심] 공이 바닥에 떨어졌을 때
         if (ball.getPosition().y > HEIGHT) {
             lives--;
             startShake(20);
             
-            // ★ [추가] 공 떨어질 때 게임오버 소리 (띠로리~)
-            soundManager.playSound(SoundManager.SOUND_GAMEOVER);
-            
-            if (lives > 0) resetRound();
-            else {
+            if (lives > 0) {
+                // 목숨 남았으면 실패 소리만
+                soundManager.playFailSound(); 
+                resetRound();
+            } else {
+                // 목숨 0이면 게임오버 소리 & 상태 변경
+                soundManager.playGameOverSound();
                 gameState = STATE_GAME_OVER;
                 scoreManager.saveHighScore(score);
             }
@@ -327,7 +316,6 @@ public class GamePanel extends JPanel implements Runnable {
         if (remainingBricks == 0) {
             gameState = STATE_VICTORY;
             scoreManager.saveHighScore(score);
-            // 승리 소리 (필요하면 주석 해제)
             // soundManager.playSound(SoundManager.SOUND_VICTORY);
         }
     }
@@ -363,12 +351,10 @@ public class GamePanel extends JPanel implements Runnable {
             isSoundOn = !isSoundOn;
             soundManager.setMute(!isSoundOn);
             soundButton = new GameButton(WIDTH/2 - 100, 150, 200, 50, "SOUND: " + (isSoundOn ? "ON" : "OFF"));
-            
-            if(isSoundOn) changeBackgroundBGM(); // 소리 켜면 음악 다시 재생
+            if(isSoundOn) changeBackgroundBGM();
         }
         
         if (backgrounds != null) {
-            // ★ [추가] 배경 바꿀 때마다 음악도 같이 변경!
             if (prevBgButton.isClicked(mouseHandler)) {
                 currentBgIndex--;
                 if (currentBgIndex < 0) currentBgIndex = backgrounds.length - 1;
@@ -395,7 +381,6 @@ public class GamePanel extends JPanel implements Runnable {
         if (backButton.isClicked(mouseHandler)) gameState = STATE_MENU;
     }
     
-    // ★ [추가] 현재 배경 번호에 맞는 BGM 재생 (bgm1.wav ~ bgm6.wav)
     private void changeBackgroundBGM() {
         if (isSoundOn) {
             String bgmName = "bgm" + (currentBgIndex + 1) + ".wav";
@@ -426,19 +411,13 @@ public class GamePanel extends JPanel implements Runnable {
         }
         
         switch (gameState) {
-            case STATE_MENU:
-                drawMenu(dbg);
-                break;
-            case STATE_LEVEL_SELECT:
-                drawLevelSelect(dbg);
-                break;
+            case STATE_MENU: drawMenu(dbg); break;
+            case STATE_LEVEL_SELECT: drawLevelSelect(dbg); break;
             case STATE_PLAY:
                 mapGenerator.draw(dbg);
                 paddle.draw(dbg);
-                
                 dbg.setColor(colorList[ballColorIndex]);
                 ball.draw(dbg); 
-                
                 effectManager.draw(dbg);
                 powerUpManager.draw(dbg);
                 drawHUD(dbg);
@@ -466,9 +445,7 @@ public class GamePanel extends JPanel implements Runnable {
                 effectManager.draw(dbg);
                 drawResult(dbg, "STAGE CLEAR!", Color.GREEN);
                 break;
-            case STATE_SETTINGS:
-                drawSettings(dbg);
-                break;
+            case STATE_SETTINGS: drawSettings(dbg); break;
         }
         
         if (shakeTimer > 0 || (shakeX != 0 || shakeY != 0)) {
@@ -478,7 +455,6 @@ public class GamePanel extends JPanel implements Runnable {
         draw();
     }
     
-    // UI 드로잉 메소드들
     private void drawLevelSelect(Graphics2D g2) {
         g2.setColor(new Color(0, 0, 0, 150));
         g2.fillRect(0, 0, WIDTH, HEIGHT);
