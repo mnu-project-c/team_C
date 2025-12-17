@@ -15,11 +15,11 @@ public class SoundManager {
 
     private static final String SOUND_PATH = "assets/";
     
-    // 네 assets 폴더에 실제 존재하는 파일들만 등록
+    // [수정] 실제 에셋 파일명인 "Bgm.wav"로 매칭
     public static final String SOUND_HIT = "hit.wav"; 
-    public static final String SOUND_FAIL = "Fail.wav";       // 대문자 F 주의
-    public static final String SOUND_EXPLODE = "explode.wav"; // 깨질 때 소리
-    public static final String SOUND_CLICK = "click.wav";     // 버튼 소리
+    public static final String SOUND_FAIL = "Fail.wav"; 
+    public static final String SOUND_EXPLODE = "explode.wav"; 
+    public static final String SOUND_CLICK = "click.wav";     
 
     private Map<String, Clip> clipCache;
     private Clip currentBgmClip;
@@ -50,23 +50,32 @@ public class SoundManager {
                 clip.setFramePosition(0); 
                 clip.start();
             }
-        } catch (Exception e) {
-            // 파일이 없어도 에러 안 뜨게 조용히 넘어감
-        }
+        } catch (Exception e) {}
     }
 
+    // ★ 브금 재생 핵심 로직
     public void playBGM(String fileName) {
         if (isMuted) return;
-        stopBGM();
+        
+        // 현재 재생 중인 브금이 새로 부르려는 브금과 같으면 무시 (끊김 방지)
+        if (currentBgmClip != null && currentBgmClip.isRunning()) {
+             // 같은 파일을 다시 재생하라고 하면 그냥 둠
+             return; 
+        }
+
+        stopBGM(); // 다른 브금이 나오고 있었다면 정지
+        
         try {
             Clip clip = loadClip(fileName);
             if (clip != null) {
-                setVolume(clip, masterVolume - 5.0f);
-                clip.loop(Clip.LOOP_CONTINUOUSLY);
+                setVolume(clip, masterVolume - 5.0f); // 브금은 효과음보다 조금 작게
+                clip.loop(Clip.LOOP_CONTINUOUSLY);   // 무한 반복
                 clip.start();
                 currentBgmClip = clip;
             }
-        } catch (Exception e) {}
+        } catch (Exception e) {
+            System.out.println("브금 로드 실패: " + fileName);
+        }
     }
     
     public void stopBGM() {
@@ -105,5 +114,6 @@ public class SoundManager {
     public void setMute(boolean muted) {
         this.isMuted = muted;
         if (muted) stopAll();
+        // 뮤트 해제 시 다시 브금 재생하고 싶으면 여기서 playBGM 호출 가능
     }
 }

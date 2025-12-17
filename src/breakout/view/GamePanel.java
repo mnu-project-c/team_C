@@ -120,7 +120,10 @@ public class GamePanel extends JPanel implements Runnable {
         scoreManager = new ScoreManager();
         powerUpManager = new PowerUpManager();
         soundManager = new SoundManager(); 
-        soundManager.playBGM("bgm1.wav"); 
+
+        // ★ [BGM] 생성자에서 바로 브금 가즈아!
+        // assets/Bgm.wav를 무한 루프로 실행함
+        soundManager.playBGM("Bgm.wav"); 
         
         loadResources();
         
@@ -219,7 +222,7 @@ public class GamePanel extends JPanel implements Runnable {
         powerUpManager.clear();
         applyCustomColors();
         score = 0; lives = 3; shakeTimer = 0; 
-        comboCount = 0; // ★ 게임 시작 시 콤보 초기화
+        comboCount = 0; 
         gameState = STATE_PLAY;
     }
     
@@ -229,7 +232,7 @@ public class GamePanel extends JPanel implements Runnable {
         paddle.getPosition().y = HEIGHT - 60;
         ball = new Ball(WIDTH / 2 - 10, HEIGHT - 100);
         powerUpManager.clear();
-        comboCount = 0; // ★ 라운드 리셋(죽음) 시 콤보 초기화
+        comboCount = 0; 
         try { Thread.sleep(500); } catch (Exception e) {}
     }
     
@@ -257,14 +260,15 @@ public class GamePanel extends JPanel implements Runnable {
                 if(remainingTime < 0) remainingTime = 0;
                 Thread.sleep((long)remainingTime);
                 nextDrawTime += drawInterval;
-            } catch (InterruptedException e) { e.printStackTrace(); }
+            } catch (InterruptedException e) {
+    e.printStackTrace(); // ✅ 에러 내용을 콘솔에 찍어달라는 뜻이야
+}
         }
     }
     
     private void update() {
         if (shakeTimer > 0) shakeTimer--;
         
-        // ★ 콤보 애니메이션: 글자 크기가 서서히 원래대로(1.0) 돌아옴
         if (comboScale > 1.0f) comboScale -= 0.05f;
 
         inputManager.update();
@@ -319,28 +323,24 @@ public class GamePanel extends JPanel implements Runnable {
         ball.update();
         powerUpManager.update(this, paddle);
         
-        // 1. 패들 충돌
         if (CollisionDetector.isColliding(ball, paddle)) {
             CollisionDetector.handlePaddleCollision(ball, paddle);
             if (ball.getVelocity().y < 0) { 
                 startShake(5);
                 soundManager.playHitSound();
-                comboCount = 0; // ★ 패들에 닿으면 콤보 끊김!
+                comboCount = 0; 
             }
         }
         
-        // 2. 벽돌 충돌
         for (Brick brick : mapGenerator.bricks) {
             if (!brick.isDestroyed) {
                 if (ball.getBounds().intersects(brick.getBounds())) {
                     CollisionDetector.resolveBallVsRect(ball, brick);
                     brick.hit();
                     
-                    // ★ 콤보 증가 및 애니메이션 트리거
                     comboCount++;
-                    comboScale = 1.8f; // 글자를 1.8배로 키움 (Pop 효과)
+                    comboScale = 1.8f; 
                     
-                    // 점수에 콤보 보너스 추가 (콤보당 +10점)
                     int bonus = (comboCount > 1) ? (comboCount * 10) : 0;
                     score += (brick.scoreValue + bonus);
                     
@@ -357,13 +357,12 @@ public class GamePanel extends JPanel implements Runnable {
             }
         }
         
-        // 3. 공 떨어짐
         if (ball.getPosition().y > HEIGHT) {
             lives--;
             startShake(20);
             if (lives > 0) {
                 soundManager.playFailSound();
-                resetRound(); // 여기서 comboCount = 0 됨
+                resetRound(); 
             } else {
                 soundManager.playFailSound();
                 gameState = STATE_GAME_OVER;
@@ -405,8 +404,12 @@ public class GamePanel extends JPanel implements Runnable {
         if (backButton.isClicked(mouseHandler)) { soundManager.playClickSound(); gameState = STATE_MENU; }
     }
     
+    // ★ [BGM] 배경 변경에 따라 브금 변경하는 로직
     private void changeBackgroundBGM() {
-        if (isSoundOn) soundManager.playBGM("bgm" + (currentBgIndex + 1) + ".wav");
+        if (isSoundOn) {
+            // 현재는 Bgm.wav 하나뿐이라 이걸로 고정해뒀어. 나중에 bgm1, bgm2 생기면 "bgm" + (currentBgIndex + 1) + ".wav"로 바꿔도 돼!
+            soundManager.playBGM("Bgm.wav");
+        }
     }
     
     @Override
@@ -486,19 +489,16 @@ public class GamePanel extends JPanel implements Runnable {
         g2.drawString("LIVES:", WIDTH - 180, 28);
         for (int i = 0; i < lives; i++) drawHeart(g2, WIDTH - 100 + (i * 30), 10);
         
-        // ★ 콤보 텍스트 그리기 (2콤보 이상일 때)
         if (comboCount >= 2) {
-            int fontSize = (int)(40 * comboScale); // 콤보 높을수록, 방금 터졌을수록 커짐
+            int fontSize = (int)(40 * comboScale); 
             g2.setFont(new Font("Consolas", Font.BOLD, fontSize));
             
-            // 콤보 색상 변화 (노랑 -> 주황 -> 빨강)
             if (comboCount < 5) g2.setColor(Color.YELLOW);
             else if (comboCount < 10) g2.setColor(Color.ORANGE);
             else g2.setColor(Color.RED);
             
             String comboText = comboCount + " COMBO!";
             int tw = g2.getFontMetrics().stringWidth(comboText);
-            // 화면 중앙 상단 (점수 아래쪽)에 표시
             g2.drawString(comboText, WIDTH/2 - tw/2, 80);
         }
     }
