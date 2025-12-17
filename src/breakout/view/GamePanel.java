@@ -344,15 +344,14 @@ public class GamePanel extends JPanel implements Runnable {
                     int bonus = (comboCount > 1) ? (comboCount * 10) : 0;
                     score += (brick.scoreValue + bonus);
                     
+                    soundManager.playExplodeSound();
+                    
                     if (brick.isDestroyed) {
-                        soundManager.playExplodeSound();
                         if (brick instanceof breakout.entity.ExplosiveBrick) triggerExplosion(brick);
                         effectManager.createExplosion(brick.getPosition().x+40, brick.getPosition().y+15, brick.color);
                         powerUpManager.maybeSpawn(brick.getPosition().x+40, brick.getPosition().y+15);
                         startShake(5); 
-                    } else {
-                        soundManager.playHitSound();
-                    }
+                    } 
                     break; 
                 }
             }
