@@ -472,7 +472,7 @@ public class GamePanel extends JPanel implements Runnable {
         }
         
         draw3DText(g2, "샤갈적인 벽돌깨기", WIDTH/2 - 280, 150, Color.YELLOW, Color.DARK_GRAY, 70f);
-        draw3DText(g2, "_학생회의 반란_", WIDTH/2 - 130, 210, Color.WHITE, Color.BLACK, 30f);
+        draw3DText(g2, "[학생회의 반란]", WIDTH/2 - 130, 210, Color.WHITE, Color.BLACK, 30f);
         
         g2.setColor(Color.CYAN);
         g2.setFont(new Font("Consolas", Font.BOLD, 20));
