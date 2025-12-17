@@ -70,13 +70,8 @@ public class LevelEditor {
 
     // ★ [수정됨] 매개변수를 MouseHandler 하나만 받도록 변경
     public void update(MouseHandler mouse) {
-        // 1. UI 버튼 처리
         updateButtons(mouse);
-
-        // 2. 그리드 클릭 처리 (벽돌 배치/삭제)
         handleGridClick(mouse);
-
-        // 3. 메시지 타이머 감소
         if (messageTimer > 0) messageTimer--;
     }
     

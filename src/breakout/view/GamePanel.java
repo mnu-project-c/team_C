@@ -125,11 +125,11 @@ public class GamePanel extends JPanel implements Runnable {
     private void initUI() {
         int centerX = WIDTH / 2 - 100;
         
+        // 버튼 위치(Y좌표) 재배치
         startButton = new GameButton(centerX, 250, 200, 50, "GAME START");
         settingsButton = new GameButton(centerX, 320, 200, 50, "SETTINGS");
-        exitButton = new GameButton(centerX, 390, 200, 50, "EXIT GAME");
-        
         editorButton = new GameButton(centerX, 390, 200, 50, "LEVEL EDITOR");
+        exitButton = new GameButton(centerX, 460, 200, 50, "EXIT GAME");
         
         restartButton = new GameButton(centerX, 350, 200, 50, "TRY AGAIN");
         menuButton = new GameButton(centerX, 420, 200, 50, "MAIN MENU");
@@ -145,10 +145,9 @@ public class GamePanel extends JPanel implements Runnable {
         lvl1Button = new GameButton(centerX, 200, 200, 50, "LEVEL 1");
         lvl2Button = new GameButton(centerX, 270, 200, 50, "LEVEL 2");
         lvl3Button = new GameButton(centerX, 340, 200, 50, "LEVEL 3");
-        lvlBackButton = new GameButton(centerX, 450, 200, 50, "BACK");
-
         customPlayButton = new GameButton(centerX, 410, 200, 50, "CUSTOM MAP");
-
+        lvlBackButton = new GameButton(centerX, 480, 200, 50, "BACK");
+        
         levelEditor = new LevelEditor();
     }
     
