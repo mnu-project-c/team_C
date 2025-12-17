@@ -67,4 +67,17 @@ public class Ball extends GameObject {
     public void onCollision(Collidable other) {
         velocity.y = -velocity.y;
     }
+
+        // 상점용: 공 속도 감소 (중복 구매/여러 번 호출 대비해서 최소 속도 제한)
+    public void slowDown() {
+        double factor = 0.7;     // 30% 감소
+        double min = 2.0;        // 너무 느려져서 멈추는 것 방지
+
+        velocity.x *= factor;
+        velocity.y *= factor;
+
+        if (Math.abs(velocity.x) < min) velocity.x = Math.signum(velocity.x) * min;
+        if (Math.abs(velocity.y) < min) velocity.y = Math.signum(velocity.y) * min;
+    }
+
 }

@@ -81,14 +81,16 @@ public class GamePanel extends JPanel implements Runnable {
     private Image menuGifImage;
     private Font customFont;
     
-    // 콤보 시스템
-    private int comboCount = 0;       
-    private float comboScale = 1.0f;  
+    // ★ 콤보 시스템 변수
+    private int comboCount = 0;       // 현재 콤보
+    private float comboScale = 1.0f;  // 콤보 텍스트 크기 애니메이션용
     
+    // Fonts
     private Font mainFont;      
     private Font titleFont;     
     private Font subTitleFont;  
     
+    // 버튼 텍스트용 한글 색상 이름 (버튼은 한글 유지)
     private final Color[] colorList = { Color.RED, Color.ORANGE, Color.YELLOW, Color.GREEN, Color.BLUE, Color.MAGENTA, Color.WHITE };
     private final String[] colorNames = { "빨강", "주황", "노랑", "초록", "파랑", "보라", "흰색" };
     private int ballColorIndex = 0; 
@@ -144,16 +146,9 @@ public class GamePanel extends JPanel implements Runnable {
         try {
             File fontFile = new File("assets/DungGeunMo.ttf");
             if (fontFile.exists()) {
-                customFont = Font.createFont(Font.TRUETYPE_FONT, fontFile);
-                GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(customFont);
-            } else { customFont = new Font("SansSerif", Font.BOLD, 12); }
-        } catch (Exception e) { customFont = new Font("SansSerif", Font.BOLD, 12); }
-        
-        try {
-            File fontFile = new File("assets/DungGeunMo.ttf");
-            if (fontFile.exists()) {
                 Font baseFont = Font.createFont(Font.TRUETYPE_FONT, fontFile);
                 GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(baseFont);
+                customFont = baseFont.deriveFont(Font.BOLD, 12f); // customFont 초기화 추가
                 mainFont = baseFont.deriveFont(Font.BOLD, 12f);
                 titleFont = baseFont.deriveFont(Font.BOLD, 70f);
                 subTitleFont = baseFont.deriveFont(Font.BOLD, 30f);
@@ -164,6 +159,7 @@ public class GamePanel extends JPanel implements Runnable {
     }
     
     private void useDefaultFonts() {
+        customFont = new Font("SansSerif", Font.BOLD, 12);
         mainFont = new Font("SansSerif", Font.BOLD, 12);
         titleFont = new Font("SansSerif", Font.BOLD, 70);
         subTitleFont = new Font("SansSerif", Font.BOLD, 30);
@@ -171,27 +167,27 @@ public class GamePanel extends JPanel implements Runnable {
     
     private void initUI() {
         int centerX = WIDTH / 2 - 100;
+        int startY = 270;
+        int gap = 60;
         
-        // ★ 메인 메뉴 (영어)
-        startButton = new GameButton(centerX, 250, 200, 50, "게임시작");
-        settingsButton = new GameButton(centerX, 320, 200, 50, "설정");
-        editorButton = new GameButton(centerX, 390, 200, 50, "사용자지정");
-        exitButton = new GameButton(centerX, 460, 200, 50, "종료");
-
-        // 일시정지/결과 화면 (영어)
-        restartButton = new GameButton(centerX, 350, 200, 50, "다시시작");
+        // ★ 중복 제거: 한글 텍스트 버전으로 통일
+        startButton = new GameButton(centerX, startY, 200, 50, "게임 시작");
+        settingsButton = new GameButton(centerX, startY + gap, 200, 50, "설정");
+        editorButton = new GameButton(centerX, startY + gap * 2, 200, 50, "레벨 에디터");
+        exitButton = new GameButton(centerX, startY + gap * 3, 200, 50, "게임 종료");
+        
+        restartButton = new GameButton(centerX, 350, 200, 50, "다시 시작");
         menuButton = new GameButton(centerX, 420, 200, 50, "메인 메뉴");
-        resumeButton = new GameButton(centerX, 300, 200, 50, "돌아가기");
+        resumeButton = new GameButton(centerX, 300, 200, 50, "계속하기");
         
-        // 설정 화면 (영어)
-        soundButton = new GameButton(centerX, 150, 200, 50, "SOUND: ON");
+        soundButton = new GameButton(centerX, 150, 200, 50, "소리: 켜짐");
         prevBgButton = new GameButton(centerX - 110, 230, 100, 50, "<< 배경");
         nextBgButton = new GameButton(centerX + 210, 230, 100, 50, "배경 >>");
-        ballColorButton = new GameButton(centerX, 310, 200, 50, "BALL: 빨강");
-        brickColorButton = new GameButton(centerX, 390, 200, 50, "BRICK: 노랑");
-        backButton = new GameButton(centerX, 500, 200, 50, "돌아가기");
+        ballColorButton = new GameButton(centerX, 310, 200, 50, "공: 빨강");
+        brickColorButton = new GameButton(centerX, 390, 200, 50, "벽돌: 노랑");
+        backButton = new GameButton(centerX, 500, 200, 50, "뒤로가기");
         
-        // 레벨 선택 (한글)
+        // 레벨 버튼 (한글 통일)
         lvl1Button = new GameButton(centerX, 200, 200, 50, "1단계");
         lvl2Button = new GameButton(centerX, 270, 200, 50, "2단계");
         lvl3Button = new GameButton(centerX, 340, 200, 50, "3단계");
@@ -329,6 +325,7 @@ public class GamePanel extends JPanel implements Runnable {
         ball.update();
         powerUpManager.update(this, paddle);
         
+        // 1. 패들 충돌
         if (CollisionDetector.isColliding(ball, paddle)) {
             CollisionDetector.handlePaddleCollision(ball, paddle);
             if (ball.getVelocity().y < 0) { 
@@ -338,12 +335,14 @@ public class GamePanel extends JPanel implements Runnable {
             }
         }
         
+        // 2. 벽돌 충돌 (수정됨: 괄호 오류 및 논리 수정)
         for (Brick brick : mapGenerator.bricks) {
             if (!brick.isDestroyed) {
                 if (ball.getBounds().intersects(brick.getBounds())) {
                     CollisionDetector.resolveBallVsRect(ball, brick);
                     brick.hit();
                     
+                    // 콤보 증가 및 애니메이션
                     comboCount++;
                     comboScale = 1.8f; 
                     
@@ -359,11 +358,12 @@ public class GamePanel extends JPanel implements Runnable {
                     } else {
                         soundManager.playHitSound();
                     }
-                    break;
+                    break; // 한 프레임에 하나의 벽돌만 충돌 처리
                 }
             }
         }
         
+        // 3. 공 떨어짐
         if (ball.getPosition().y > HEIGHT) {
             lives--;
             startShake(20);
@@ -377,8 +377,8 @@ public class GamePanel extends JPanel implements Runnable {
             }
         }
         
-        long remainingBricks = mapGenerator.bricks.stream().filter(b -> !b.isDestroyed).count();
-        if (remainingBricks == 0) {
+        // 4. 승리 조건 (수정됨: 중복 체크 및 괄호 수정)
+        if (mapGenerator.bricks.stream().noneMatch(b -> !b.isDestroyed)) {
             gameState = STATE_VICTORY;
             scoreManager.saveHighScore(score);
         }
@@ -397,6 +397,7 @@ public class GamePanel extends JPanel implements Runnable {
     }
     
     private void updateSettings() {
+        // 중복 제거: 로직 한번만 수행
         soundButton.update(mouseHandler); prevBgButton.update(mouseHandler);
         nextBgButton.update(mouseHandler); ballColorButton.update(mouseHandler);
         brickColorButton.update(mouseHandler); backButton.update(mouseHandler);
@@ -405,12 +406,12 @@ public class GamePanel extends JPanel implements Runnable {
             soundManager.playClickSound();
             isSoundOn = !isSoundOn;
             soundManager.setMute(!isSoundOn);
-            soundButton = new GameButton(WIDTH/2-100, 150, 200, 50, "SOUND: " + (isSoundOn ? "ON" : "OFF"));
+            soundButton = new GameButton(WIDTH/2 - 100, 150, 200, 50, "소리: " + (isSoundOn ? "켜짐" : "꺼짐"));
         }
-        if (prevBgButton.isClicked(mouseHandler)) { soundManager.playClickSound(); currentBgIndex=(currentBgIndex-1+6)%6; changeBackgroundBGM(); }
-        if (nextBgButton.isClicked(mouseHandler)) { soundManager.playClickSound(); currentBgIndex=(currentBgIndex+1)%6; changeBackgroundBGM(); }
-        if (ballColorButton.isClicked(mouseHandler)) { soundManager.playClickSound(); ballColorIndex=(ballColorIndex+1)%colorList.length; ballColorButton=new GameButton(WIDTH/2-100,310,200,50,"BALL: "+colorNames[ballColorIndex]); }
-        if (brickColorButton.isClicked(mouseHandler)) { soundManager.playClickSound(); brickColorIndex=(brickColorIndex+1)%colorList.length; brickColorButton=new GameButton(WIDTH/2-100,390,200,50,"BRICK: "+colorNames[brickColorIndex]); applyCustomColors(); }
+        if (prevBgButton.isClicked(mouseHandler)) { soundManager.playClickSound(); currentBgIndex = (currentBgIndex-1+6)%6; changeBackgroundBGM(); }
+        if (nextBgButton.isClicked(mouseHandler)) { soundManager.playClickSound(); currentBgIndex = (currentBgIndex+1)%6; changeBackgroundBGM(); }
+        if (ballColorButton.isClicked(mouseHandler)) { soundManager.playClickSound(); ballColorIndex = (ballColorIndex+1)%colorList.length; ballColorButton = new GameButton(WIDTH/2-100, 310, 200, 50, "공: " + colorNames[ballColorIndex]); }
+        if (brickColorButton.isClicked(mouseHandler)) { soundManager.playClickSound(); brickColorIndex = (brickColorIndex+1)%colorList.length; brickColorButton = new GameButton(WIDTH/2-100, 390, 200, 50, "벽돌: " + colorNames[brickColorIndex]); applyCustomColors(); }
         if (backButton.isClicked(mouseHandler)) { soundManager.playClickSound(); gameState = STATE_MENU; }
     }
     
@@ -436,6 +437,7 @@ public class GamePanel extends JPanel implements Runnable {
         int sx = 0, sy = 0;
         if (shakeTimer > 0) { sx=(int)(Math.random()*10-5); sy=(int)(Math.random()*10-5); dbg.translate(sx, sy); }
         
+        // 중복 제거: 한 번만 그리기
         switch (gameState) {
             case STATE_MENU: drawMenu(dbg); break;
             case STATE_LEVEL_SELECT: drawLevelSelect(dbg); break;
@@ -471,6 +473,7 @@ public class GamePanel extends JPanel implements Runnable {
         g2.drawString(text, x, y);
     }
     
+    // 중복 메소드(draw3DText) 제거하고 drawCentered3DText 사용 권장하나, 기존 코드 유지 위해 남겨둠 (필요시 삭제)
     private void draw3DText(Graphics2D g2, String text, int x, int y, Color mainColor, Color shadowColor, Font font) {
         g2.setFont(font); g2.setColor(shadowColor);
         for(int i=5; i>0; i--) g2.drawString(text, x+i, y+i);
@@ -481,17 +484,25 @@ public class GamePanel extends JPanel implements Runnable {
         if (menuGifImage != null) g2.drawImage(menuGifImage, 0, 0, WIDTH, HEIGHT, this);
         else { g2.setColor(Color.BLACK); g2.fillRect(0, 0, WIDTH, HEIGHT); }
         
-        draw3DText(g2, "샤갈적인 벽돌깨기", WIDTH/2 - 280, 150, Color.YELLOW, Color.DARK_GRAY, titleFont);
-        draw3DText(g2, "[학생회의 반란]", WIDTH/2 - 130, 210, Color.WHITE, Color.BLACK, subTitleFont);
-        g2.setColor(Color.CYAN); g2.setFont(new Font("Consolas", Font.BOLD, 20));
+        // 중복 제거 및 타이틀 정리 (한글 타이틀 유지)
+        drawCentered3DText(g2, "샤갈적인 벽돌깨기", 150, Color.YELLOW, Color.DARK_GRAY, 70f);
+        drawCentered3DText(g2, "~학생회의 반란~", 210, Color.WHITE, Color.BLACK, 30f);
+        
+        g2.setColor(Color.CYAN);
+        g2.setFont(new Font("Consolas", Font.BOLD, 20));
         drawCenteredString(g2, "HIGH SCORE: " + scoreManager.getHighScore(), WIDTH/2, 550);
-        startButton.draw(g2, customFont); settingsButton.draw(g2, customFont); exitButton.draw(g2, customFont); editorButton.draw(g2, customFont);
+        
+        // 버튼 그리기
+        startButton.draw(g2, customFont); 
+        settingsButton.draw(g2, customFont); 
+        editorButton.draw(g2, customFont); 
+        exitButton.draw(g2, customFont);
     }
     
     private void drawLevelSelect(Graphics2D g2) {
         g2.setColor(new Color(0, 0, 0, 150)); g2.fillRect(0, 0, WIDTH, HEIGHT);
         g2.setColor(Color.WHITE); g2.setFont(new Font("Consolas", Font.BOLD, 40));
-        drawCenteredString(g2, "SELECT LEVEL", WIDTH/2, 120);
+        drawCenteredString(g2, "SELECT LEVEL", WIDTH/2, 120); 
         lvl1Button.draw(g2, customFont); lvl2Button.draw(g2, customFont); 
         lvl3Button.draw(g2, customFont); customPlayButton.draw(g2, customFont);
         lvlBackButton.draw(g2, customFont);
@@ -500,10 +511,12 @@ public class GamePanel extends JPanel implements Runnable {
     private void drawHUD(Graphics2D g2) {
         g2.setColor(new Color(0, 0, 0, 100)); g2.fillRect(0, 0, WIDTH, 40);
         g2.setColor(Color.WHITE); g2.setFont(new Font("Consolas", Font.BOLD, 24));
+        
         g2.drawString("SCORE: " + score, 20, 28);
         g2.drawString("LIVES:", WIDTH - 180, 28);
         for (int i = 0; i < lives; i++) drawHeart(g2, WIDTH - 100 + (i * 30), 10);
         
+        // 콤보 텍스트
         if (comboCount >= 2) {
             int fontSize = (int)(40 * comboScale); 
             g2.setFont(new Font("Consolas", Font.BOLD, fontSize));
@@ -511,6 +524,7 @@ public class GamePanel extends JPanel implements Runnable {
             if (comboCount < 5) g2.setColor(Color.YELLOW);
             else if (comboCount < 10) g2.setColor(Color.ORANGE);
             else g2.setColor(Color.RED);
+            
             String comboText = comboCount + " COMBO!";
             int tw = g2.getFontMetrics().stringWidth(comboText);
             g2.drawString(comboText, WIDTH/2 - tw/2, 80);
@@ -525,13 +539,13 @@ public class GamePanel extends JPanel implements Runnable {
     private void drawSettings(Graphics2D g2) {
         g2.setColor(new Color(0, 0, 0, 180)); g2.fillRect(0, 0, WIDTH, HEIGHT);
         g2.setColor(Color.WHITE); g2.setFont(new Font("Consolas", Font.BOLD, 40));
-        drawCenteredString(g2, "SETTINGS", WIDTH/2, 100);
+        drawCenteredString(g2, "SETTINGS", WIDTH/2, 100); 
         
         if (customFont != null) g2.setFont(customFont.deriveFont(Font.BOLD, 20f));
         else g2.setFont(new Font("SansSerif", Font.BOLD, 20));
         
         g2.setColor(Color.LIGHT_GRAY);
-        drawCenteredString(g2, "Select Background (" + (currentBgIndex + 1) + "/6)", WIDTH/2, 220);
+        drawCenteredString(g2, "배경선택 (" + (currentBgIndex + 1) + "/6)", WIDTH/2, 220); 
         
         soundButton.draw(g2, customFont); prevBgButton.draw(g2, customFont); 
         nextBgButton.draw(g2, customFont); ballColorButton.draw(g2, customFont); 
@@ -541,7 +555,7 @@ public class GamePanel extends JPanel implements Runnable {
     private void drawPause(Graphics2D g2) {
         g2.setColor(new Color(0, 0, 0, 150)); g2.fillRect(0, 0, WIDTH, HEIGHT);
         g2.setColor(Color.ORANGE); g2.setFont(new Font("Arial", Font.BOLD, 50));
-        drawCenteredString(g2, "PAUSED", WIDTH/2, 200);
+        drawCenteredString(g2, "PAUSED", WIDTH/2, 200); 
         resumeButton.draw(g2, customFont); menuButton.draw(g2, customFont);
     }
     
@@ -550,7 +564,7 @@ public class GamePanel extends JPanel implements Runnable {
         g2.setColor(color); g2.setFont(new Font("Arial", Font.BOLD, 50));
         drawCenteredString(g2, title, WIDTH/2, 200);
         g2.setColor(Color.WHITE); g2.setFont(new Font("Consolas", Font.BOLD, 30));
-        drawCenteredString(g2, "Final Score: " + score, WIDTH/2, 280);
+        drawCenteredString(g2, "Final Score: " + score, WIDTH/2, 280); 
         restartButton.draw(g2, customFont); menuButton.draw(g2, customFont);
     }
     
