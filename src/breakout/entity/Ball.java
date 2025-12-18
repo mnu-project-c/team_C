@@ -38,6 +38,21 @@ public class Ball extends GameObject {
     public void update() {
         position.x += velocity.x;
         position.y += velocity.y;
+<<<<<<< HEAD
+=======
+
+       // if (position.x < 0) { position.x = 0; velocity.x = -velocity.x; }
+       // if (position.x > GamePanel.WIDTH - width) { position.x = GamePanel.WIDTH - width; velocity.x = -velocity.x; }
+       // if (position.y < 0) { position.y = 0; velocity.y = -velocity.y; }
+    }
+
+    @Override
+    public void draw(Graphics2D g) {
+        int x = (int)position.x;
+        int y = (int)position.y;
+        int w = (int)width;
+        int h = (int)height;
+>>>>>>> 9691d1e8da6bfdfc2e2a9fdde74887205ddc5ca0
         
         // 벽 충돌 처리
         if (position.x < 0) {
