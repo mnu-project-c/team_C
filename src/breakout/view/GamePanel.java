@@ -91,6 +91,10 @@ public class GamePanel extends JPanel implements Runnable {
     
     private Image[] ballSkins;
     private int currentSkinIndex = -1; 
+<<<<<<< HEAD
+    
+=======
+>>>>>>> 9691d1e8da6bfdfc2e2a9fdde74887205ddc5ca0
     private int gameState = STATE_MENU;
     private int previousState = STATE_MENU; 
     
@@ -118,8 +122,12 @@ public class GamePanel extends JPanel implements Runnable {
     private int ballColorIndex = 0; 
     private int brickColorIndex = 2;
     private int paddleColorIndex = 7; 
+<<<<<<< HEAD
     private int paddleShapeIndex = 0; // 0:Rect, 1:Round, 2:Diamond, 3:Wave
     private final Random rng = new Random();
+=======
+    private int paddleShapeIndex = 0; 
+>>>>>>> 49880c1f915c895f519260ec2f33ea8493d0870d
     
     private int currentLevel = 1;
     private boolean doubleScoreActive = false;
@@ -131,6 +139,16 @@ public class GamePanel extends JPanel implements Runnable {
     private enum LuckyPrize {
         EXTRA_LIFE, WIDE_PADDLE, SLOW_BALL, PIERCING_BALL, DOUBLE_SCORE
     }
+
+    // 페이드 인/아웃 관련 변수
+    private float fadeAlpha = 0.0f;    
+    private boolean isFading = false;  
+    private boolean isFadeOut = false; 
+    private int nextGameState = -1;    
+    private final float FADE_SPEED = 0.05f; 
+
+    // CRT 필터 관련 변수
+    private boolean isCRTFilterOn = false; 
 
     public GamePanel() {
         setPreferredSize(new Dimension(WIDTH, HEIGHT));
@@ -158,7 +176,6 @@ public class GamePanel extends JPanel implements Runnable {
         loadResources();
         initGameObjects(); 
         initUI();          
-        // Panels depend on ScoreManager being initialized
         leaderboardPanel = new LeaderboardPanel(scoreManager);
         settingsPanel = new SettingsPanel(this);
         levelSelectPanel = new LevelSelectPanel(this);
@@ -221,11 +238,14 @@ public class GamePanel extends JPanel implements Runnable {
         restartButton = createCenteredButton(340, 200, 50, "다시 시작");
         victoryLevelButton = createCenteredButton(400, 200, 50, "레벨 선택"); 
         menuButton = createCenteredButton(460, 200, 50, "메인 메뉴");
+<<<<<<< HEAD
+=======
         achBackButton = new GameButton(WIDTH / 2 - 100, 500 , 200 , 50, "돌아가기");
         
         //int setY = 130;
         //int setGap = 50;
 
+>>>>>>> 9691d1e8da6bfdfc2e2a9fdde74887205ddc5ca0
     }
     
     private GameButton createCenteredButton(int y, int width, int height, String text) {
@@ -314,12 +334,16 @@ public class GamePanel extends JPanel implements Runnable {
     public void setShopOpener(Runnable shopOpener) { this.shopOpener = shopOpener; }
     public void openShop() { if (shopOpener != null) shopOpener.run(); }
     public void pauseForOverlay() { gameState = STATE_PAUSED; }
+<<<<<<< HEAD
+    public void resumeFromOverlay() { gameState = STATE_PAUSED; }
+=======
     public void resumeFromOverlay() { gameState = STATE_PLAY; }
+>>>>>>> 9691d1e8da6bfdfc2e2a9fdde74887205ddc5ca0
 
     // Pause-specific helpers invoked by PausePanel
     public void resumeFromPause() { gameState = STATE_PLAY; wasEscPressed = false; }
-    public void openSettingsFromPause() { previousState = STATE_PAUSED; gameState = STATE_SETTINGS; }
-    public void gotoMenuFromPause() { gameState = STATE_MENU; }
+    public void openSettingsFromPause() { previousState = STATE_PAUSED; transitionTo(STATE_SETTINGS); }
+    public void gotoMenuFromPause() { transitionTo(STATE_MENU); }
 
     public int getScore() { return score; }
     public void spendScore(int amount) { score -= amount; if (score < 0) score = 0; }
@@ -357,6 +381,7 @@ public class GamePanel extends JPanel implements Runnable {
         }
     }
 
+<<<<<<< HEAD
     private LuckyPrize rollLuckyPrize() {
         int roll = rng.nextInt(100);
         if (roll < 20) return LuckyPrize.EXTRA_LIFE;
@@ -430,7 +455,27 @@ public class GamePanel extends JPanel implements Runnable {
     
     private void addScoreWithMultiplier(int amount) {
         score += doubleScoreActive ? amount * 2 : amount;
+=======
+<<<<<<< HEAD
+    // 페이드 전환
+    public void transitionTo(int nextState) {
+        if (isFading) return;
+        this.nextGameState = nextState;
+        this.isFading = true;
+        this.isFadeOut = true; 
+        this.fadeAlpha = 0.0f;
     }
+    
+    // CRT 필터 토글
+    public boolean isCRTFilterOn() { return isCRTFilterOn; }
+    public void toggleCRTFilter() { isCRTFilterOn = !isCRTFilterOn; }
+
+=======
+    public SoundManager getSoundManager() {
+    return soundManager;
+>>>>>>> 49880c1f915c895f519260ec2f33ea8493d0870d
+    }
+>>>>>>> 9691d1e8da6bfdfc2e2a9fdde74887205ddc5ca0
     @Override
     public void run() {
         double drawInterval = 1000000000 / FPS;
@@ -448,6 +493,26 @@ public class GamePanel extends JPanel implements Runnable {
     }
     
     private void update() {
+        // 페이드 로직
+        if (isFading) {
+            if (isFadeOut) {
+                fadeAlpha += FADE_SPEED;
+                if (fadeAlpha >= 1.0f) {
+                    fadeAlpha = 1.0f;
+                    if (nextGameState != -1) {
+                        gameState = nextGameState;
+                    }
+                    isFadeOut = false; 
+                }
+            } else {
+                fadeAlpha -= FADE_SPEED;
+                if (fadeAlpha <= 0.0f) {
+                    fadeAlpha = 0.0f;
+                    isFading = false; 
+                }
+            }
+        }
+
         if (shopOverlay != null && shopOverlay.isVisible()) {
             shopOverlay.updateOverlay(mouseHandler);
             return; 
@@ -459,6 +524,43 @@ public class GamePanel extends JPanel implements Runnable {
         inputManager.update();
         effectManager.update(); 
         
+<<<<<<< HEAD
+        if (!inputManager.escape) {
+            wasEscPressed = false;
+        }
+        
+        if (!isFading || !isFadeOut) { 
+            switch (gameState) {
+                case STATE_MENU: updateMenu(); break;
+                case STATE_LEVEL_SELECT: 
+                    if (levelSelectPanel != null && levelSelectPanel.update(mouseHandler)) { 
+                        transitionTo(STATE_MENU); 
+                    } 
+                    break;
+                case STATE_PLAY: updatePlay(); break;
+                case STATE_PAUSED: 
+                    if (pausePanel != null) pausePanel.update(mouseHandler); 
+                    if (inputManager.escape && !wasEscPressed) {
+                        soundManager.playClickSound();
+                        resumeFromPause(); 
+                        wasEscPressed = true; 
+                    }
+                    break;
+                case STATE_GAME_OVER:
+                case STATE_VICTORY: updateResult(); break;
+                case STATE_SETTINGS: 
+                    if (settingsPanel != null && settingsPanel.update(mouseHandler)) { 
+                        transitionTo(previousState); 
+                    } 
+                    break;
+                case STATE_EDITOR: updateEditor(); break;
+                case STATE_LEADERBOARD:
+                    if (leaderboardPanel != null && leaderboardPanel.update(mouseHandler)) {
+                        transitionTo(STATE_MENU);
+                    }
+                    break;
+            }
+=======
         switch (gameState) {
             case STATE_MENU: updateMenu(); break;
             case STATE_LEVEL_SELECT: 
@@ -482,6 +584,7 @@ public class GamePanel extends JPanel implements Runnable {
                 achBackButton.update(mouseHandler);
                 if(achBackButton.isClicked(mouseHandler)) gameState = STATE_MENU;
                 break;
+>>>>>>> 9691d1e8da6bfdfc2e2a9fdde74887205ddc5ca0
         }
 
         if (shopOverlay != null && shopOverlay.isVisible()) {
@@ -493,13 +596,22 @@ public class GamePanel extends JPanel implements Runnable {
         startButton.update(mouseHandler); settingsButton.update(mouseHandler); leaderboardButton.update(mouseHandler);
         exitButton.update(mouseHandler); editorButton.update(mouseHandler);achievementButton.update(mouseHandler);
         
+<<<<<<< HEAD
+        if (startButton.isClicked(mouseHandler)) { transitionTo(STATE_LEVEL_SELECT); }
+=======
         if (startButton.isClicked(mouseHandler)) {
              gameState = STATE_LEVEL_SELECT;
         }
+>>>>>>> 9691d1e8da6bfdfc2e2a9fdde74887205ddc5ca0
         if (settingsButton.isClicked(mouseHandler)) { 
             previousState = STATE_MENU; 
-            gameState = STATE_SETTINGS; 
+            transitionTo(STATE_SETTINGS); 
         }
+<<<<<<< HEAD
+        if (leaderboardButton.isClicked(mouseHandler)) { previousState = STATE_MENU; transitionTo(STATE_LEADERBOARD); }
+        if (editorButton.isClicked(mouseHandler)) { transitionTo(STATE_EDITOR); }
+        if (exitButton.isClicked(mouseHandler)) { System.exit(0); }
+=======
         if (leaderboardButton.isClicked(mouseHandler)) {
              previousState = STATE_MENU; gameState = STATE_LEADERBOARD; 
         }
@@ -513,6 +625,7 @@ public class GamePanel extends JPanel implements Runnable {
             gameState = STATE_ACHIEVEMENTS;
         }
         
+>>>>>>> 9691d1e8da6bfdfc2e2a9fdde74887205ddc5ca0
     }
     
 
@@ -520,7 +633,7 @@ public class GamePanel extends JPanel implements Runnable {
     private void updateEditor() {
         levelEditor.update(mouseHandler);
         if (levelEditor.getExitButton().isClicked(mouseHandler)) {
-            gameState = STATE_MENU;
+            transitionTo(STATE_MENU);
         }
     }
     
@@ -622,18 +735,22 @@ public class GamePanel extends JPanel implements Runnable {
     }
     
     private void updateResult() {
+        if (isFading) return; 
+
         restartButton.update(mouseHandler);
         menuButton.update(mouseHandler);
         
         if (gameState == STATE_VICTORY) {
             victoryLevelButton.update(mouseHandler); 
             if (victoryLevelButton.isClicked(mouseHandler)) {
-                gameState = STATE_LEVEL_SELECT; 
+                transitionTo(STATE_LEVEL_SELECT); 
             }
         }
         
-        if (restartButton.isClicked(mouseHandler)) { startGameWithLevel(currentLevel); }
-        if (menuButton.isClicked(mouseHandler)) { gameState = STATE_MENU; }
+        if (restartButton.isClicked(mouseHandler)) { 
+            startGameWithLevel(currentLevel); 
+        }
+        if (menuButton.isClicked(mouseHandler)) { transitionTo(STATE_MENU); }
     }
     
 
@@ -732,10 +849,38 @@ public class GamePanel extends JPanel implements Runnable {
         
         if (sx != 0 || sy != 0) dbg.translate(-sx, -sy);
         
+        if (isFading && fadeAlpha > 0.01f) {
+            float alpha = Math.max(0.0f, Math.min(1.0f, fadeAlpha));
+            dbg.setColor(new Color(0, 0, 0, alpha)); 
+            dbg.fillRect(0, 0, WIDTH, HEIGHT);
+        }
+
+        if (isCRTFilterOn) {
+            dbg.setColor(new Color(0, 0, 0, 50)); 
+            for (int y = 0; y < HEIGHT; y += 4) { 
+                dbg.fillRect(0, y, WIDTH, 2);
+            }
+            
+            java.awt.geom.Point2D center = new java.awt.geom.Point2D.Float(WIDTH / 2, HEIGHT / 2);
+            float radius = WIDTH;
+            float[] dist = {0.0f, 0.5f, 1.0f};
+            Color[] colors = {
+                new Color(0, 0, 0, 0),    
+                new Color(0, 0, 0, 0),    
+                new Color(0, 0, 0, 150)   
+            };
+            java.awt.RadialGradientPaint p = new java.awt.RadialGradientPaint(center, radius, dist, colors);
+            dbg.setPaint(p);
+            dbg.fillRect(0, 0, WIDTH, HEIGHT);
+        }
+
         if (gameState == STATE_MENU) {
             Toolkit.getDefaultToolkit().sync(); 
         }
     }
+
+    // ... (나머지 그리기 메서드들은 그대로 유지) ...
+    // 내용 생략 (drawMenu, drawHUD 등은 이전과 동일합니다)
     
     private void drawCentered3DText(Graphics2D g2, String text, int y, Color mainColor, Color shadowColor, float size) {
         if (customFont != null) g2.setFont(customFont.deriveFont(Font.BOLD, size));
@@ -921,4 +1066,13 @@ public class GamePanel extends JPanel implements Runnable {
         }
         startShake(20); 
     }
+<<<<<<< HEAD
 }
+=======
+    
+    // ★ [추가] 현재 선택된 공 색상을 반환하는 메서드
+    public Color getCurrentBallColor() {
+        return colorList[ballColorIndex];
+    }
+}
+>>>>>>> 49880c1f915c895f519260ec2f33ea8493d0870d
