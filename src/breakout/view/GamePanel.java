@@ -52,10 +52,7 @@ public class GamePanel extends JPanel implements Runnable {
     public static final int STATE_LEADERBOARD = 8;
     public static final int STATE_ACHIEVEMENTS = 9;
     public static final int STATE_USER_CUSTOM = 10;
-<<<<<<< HEAD
-=======
     public static final int STATE_NAME_INPUT = 11; // 이름 입력 상태
->>>>>>> 60c52665f5022d594caa88e988f44ff0f292a8c2
     
     private Thread gameThread;
     private boolean running = false;
@@ -157,8 +154,6 @@ public class GamePanel extends JPanel implements Runnable {
         inputManager = new InputManager();
         addKeyListener(inputManager);
         
-<<<<<<< HEAD
-=======
         // ★ 이름 입력을 위한 전용 키 리스너
         addKeyListener(new KeyAdapter() {
             @Override
@@ -177,7 +172,6 @@ public class GamePanel extends JPanel implements Runnable {
             }
         });
 
->>>>>>> 60c52665f5022d594caa88e988f44ff0f292a8c2
         mouseHandler = new MouseHandler();
         addMouseListener(mouseHandler);
         addMouseMotionListener(mouseHandler);
@@ -260,11 +254,7 @@ public class GamePanel extends JPanel implements Runnable {
         restartButton = createCenteredButton(340, 200, 50, "다시 시작");
         victoryLevelButton = createCenteredButton(400, 200, 50, "레벨 선택"); 
         menuButton = createCenteredButton(460, 200, 50, "메인 메뉴");
-<<<<<<< HEAD
-        achBackButton = new GameButton(WIDTH / 2 - 100, 500 , 200 , 50, "돌아가기");
-=======
         achBackButton = new GameButton(centerX, 500 , 200 , 50, "돌아가기");
->>>>>>> 60c52665f5022d594caa88e988f44ff0f292a8c2
     }
     
     private GameButton createCenteredButton(int y, int width, int height, String text) {
@@ -368,10 +358,6 @@ public class GamePanel extends JPanel implements Runnable {
     public void applyDoubleScoreFromShop() { activateDoubleScore(); }
     public MouseHandler getMouseHandler() { return mouseHandler; }
     public SoundManager getSoundManager() { return soundManager; }
-<<<<<<< HEAD
-
-=======
->>>>>>> 60c52665f5022d594caa88e988f44ff0f292a8c2
     public String applyLuckyDrawFromShop() {
         LuckyPrize prize = rollLuckyPrize();
         switch (prize) {
@@ -568,8 +554,6 @@ public class GamePanel extends JPanel implements Runnable {
                 case STATE_ACHIEVEMENTS:
                     achBackButton.update(mouseHandler);
                     if(achBackButton.isClicked(mouseHandler)) transitionTo(STATE_USER_CUSTOM);
-<<<<<<< HEAD
-=======
                     break;
                 // ★ 이름 입력 상태 업데이트 로직 추가
                 case STATE_NAME_INPUT:
@@ -583,7 +567,6 @@ public class GamePanel extends JPanel implements Runnable {
                             nameModal = null;
                         }
                     }
->>>>>>> 60c52665f5022d594caa88e988f44ff0f292a8c2
                     break;
             }
         }
@@ -711,17 +694,10 @@ public class GamePanel extends JPanel implements Runnable {
     // ★ JOptionPane 대체 메서드 수정
     private void promptAndAddScore(int score) {
         if (!scoreManager.isHighScore(score)) return;
-<<<<<<< HEAD
-        String name = JOptionPane.showInputDialog(null, "랭킹 등록! 이름을 입력하세요 (최대 10자):", "새로운 기록!", JOptionPane.PLAIN_MESSAGE);
-        if (name == null || name.trim().isEmpty()) name = "익명";
-        if (name.length() > 10) name = name.substring(0,10);
-        scoreManager.addScore(name, score);
-=======
         
         // 커스텀 모달 생성
         nameModal = new NameInputModal(WIDTH/2 - 200, HEIGHT/2 - 100, 400, 200);
         gameState = STATE_NAME_INPUT; // 상태 변경
->>>>>>> 60c52665f5022d594caa88e988f44ff0f292a8c2
     }
     
     private void updateResult() {
@@ -835,13 +811,10 @@ public class GamePanel extends JPanel implements Runnable {
             case STATE_ACHIEVEMENTS:
                 drawAchievements(dbg);
                 break;
-<<<<<<< HEAD
-=======
             // ★ 이름 입력 화면 그리기 로직 추가
             case STATE_NAME_INPUT: 
                 if (nameModal != null) nameModal.draw(dbg, customFont); 
                 break;
->>>>>>> 60c52665f5022d594caa88e988f44ff0f292a8c2
         }
         
         if (sx != 0 || sy != 0) dbg.translate(-sx, -sy);
