@@ -54,7 +54,6 @@ public class GamePanel extends JPanel implements Runnable {
     private boolean running = false;
     private final int FPS = 60;
     
-    // 상점
     private ShopOverlayPanel shopOverlay;
     private Runnable shopOpener;
 
@@ -71,17 +70,13 @@ public class GamePanel extends JPanel implements Runnable {
     private Ball ball;
     private MapGenerator mapGenerator;
     
-    // 버튼들
     private GameButton startButton, settingsButton, exitButton, editorButton;
-    private GameButton leaderboardButton;
+    private GameButton leaderboardButton, achievementButton, achBackButton;
     private LeaderboardPanel leaderboardPanel;
     private SettingsPanel settingsPanel;
     private LevelSelectPanel levelSelectPanel;
     private PausePanel pausePanel;
-    private GameButton restartButton, menuButton;
-    private GameButton victoryLevelButton;    
-    private GameButton achievementButton;
-    private GameButton achBackButton;
+    private GameButton restartButton, menuButton, victoryLevelButton;    
     
     private Image[] ballSkins;
     private int currentSkinIndex = -1; 
@@ -100,14 +95,11 @@ public class GamePanel extends JPanel implements Runnable {
     private Image menuGifImage;
     private Font customFont;
     
-    // 콤보 시스템 변수
     private int comboCount = 0;       
     private float comboScale = 1.0f;  
     
     private final Color[] colorList = { Color.RED, Color.ORANGE, Color.YELLOW, Color.GREEN, Color.BLUE, Color.MAGENTA, Color.WHITE, Color.CYAN };
     private final String[] colorNames = { "빨강", "주황", "노랑", "초록", "파랑", "보라", "흰색", "하늘" };
-    
-    
     private final String[] shapeNames = { "기본", "알약", "샤프", "파도" };
     
     private int ballColorIndex = 0; 
@@ -117,14 +109,12 @@ public class GamePanel extends JPanel implements Runnable {
     
     private int currentLevel = 1;
 
-    // 페이드 인/아웃 관련 변수
     private float fadeAlpha = 0.0f;    
     private boolean isFading = false;  
     private boolean isFadeOut = false; 
     private int nextGameState = -1;    
     private final float FADE_SPEED = 0.05f; 
 
-    // CRT 필터 관련 변수
     private boolean isCRTFilterOn = false; 
 
     public GamePanel() {
@@ -144,7 +134,7 @@ public class GamePanel extends JPanel implements Runnable {
         scoreManager = new ScoreManager();
         powerUpManager = new PowerUpManager();
         achievementManager = new AchievementManager();
-        soundManager = new SoundManager(); 
+        soundManager = SoundManager.getInstance(); 
 
         soundManager.playBGM("Bgm.wav"); 
         
@@ -208,13 +198,15 @@ public class GamePanel extends JPanel implements Runnable {
         startButton = createCenteredButton(startY, 200, 50, "게임 시작");
         settingsButton = createCenteredButton(startY + gap, 200, 50, "설정");
         leaderboardButton = createCenteredButton(startY + gap * 2, 200, 50, "랭킹");
-        achievementButton = new GameButton(startY+ gap * 3, 460, 200, 50, "업적");
+        achievementButton = createCenteredButton(startY + gap * 3, 200, 50, "업적");
         editorButton = createCenteredButton(startY + gap * 4, 200, 50, "레벨 에디터");
         exitButton = createCenteredButton(startY + gap * 5, 200, 50, "게임 종료");
         
         restartButton = createCenteredButton(340, 200, 50, "다시 시작");
         victoryLevelButton = createCenteredButton(400, 200, 50, "레벨 선택"); 
         menuButton = createCenteredButton(460, 200, 50, "메인 메뉴");
+        
+        achBackButton = createCenteredButton(500, 200, 50, "뒤로 가기");
     }
     
     private GameButton createCenteredButton(int y, int width, int height, String text) {
@@ -302,7 +294,6 @@ public class GamePanel extends JPanel implements Runnable {
     public void pauseForOverlay() { gameState = STATE_PAUSED; }
     public void resumeFromOverlay() { gameState = STATE_PLAY; }
 
-    // Pause-specific helpers invoked by PausePanel
     public void resumeFromPause() { gameState = STATE_PLAY; wasEscPressed = false; }
     public void openSettingsFromPause() { previousState = STATE_PAUSED; transitionTo(STATE_SETTINGS); }
     public void gotoMenuFromPause() { transitionTo(STATE_MENU); }
@@ -314,7 +305,6 @@ public class GamePanel extends JPanel implements Runnable {
     public void addLifeFromShop() { lives++; }
     public MouseHandler getMouseHandler() { return mouseHandler; }
 
-    // 페이드 전환
     public void transitionTo(int nextState) {
         if (isFading) return;
         this.nextGameState = nextState;
@@ -323,13 +313,11 @@ public class GamePanel extends JPanel implements Runnable {
         this.fadeAlpha = 0.0f;
     }
     
-    // CRT 필터 토글
     public boolean isCRTFilterOn() { return isCRTFilterOn; }
     public void toggleCRTFilter() { isCRTFilterOn = !isCRTFilterOn; }
 
-    public SoundManager getSoundManager() {
-    return soundManager;
-    }
+    public SoundManager getSoundManager() { return soundManager; }
+
     @Override
     public void run() {
         double drawInterval = 1000000000 / FPS;
@@ -347,15 +335,12 @@ public class GamePanel extends JPanel implements Runnable {
     }
     
     private void update() {
-        // 페이드 로직
         if (isFading) {
             if (isFadeOut) {
                 fadeAlpha += FADE_SPEED;
                 if (fadeAlpha >= 1.0f) {
                     fadeAlpha = 1.0f;
-                    if (nextGameState != -1) {
-                        gameState = nextGameState;
-                    }
+                    if (nextGameState != -1) gameState = nextGameState;
                     isFadeOut = false; 
                 }
             } else {
@@ -378,18 +363,13 @@ public class GamePanel extends JPanel implements Runnable {
         inputManager.update();
         effectManager.update(); 
         
-<<<<<<< HEAD
-        if (!inputManager.escape) {
-            wasEscPressed = false;
-        }
+        if (!inputManager.escape) wasEscPressed = false;
         
         if (!isFading || !isFadeOut) { 
             switch (gameState) {
                 case STATE_MENU: updateMenu(); break;
                 case STATE_LEVEL_SELECT: 
-                    if (levelSelectPanel != null && levelSelectPanel.update(mouseHandler)) { 
-                        transitionTo(STATE_MENU); 
-                    } 
+                    if (levelSelectPanel != null && levelSelectPanel.update(mouseHandler)) transitionTo(STATE_MENU); 
                     break;
                 case STATE_PLAY: updatePlay(); break;
                 case STATE_PAUSED: 
@@ -403,92 +383,39 @@ public class GamePanel extends JPanel implements Runnable {
                 case STATE_GAME_OVER:
                 case STATE_VICTORY: updateResult(); break;
                 case STATE_SETTINGS: 
-                    if (settingsPanel != null && settingsPanel.update(mouseHandler)) { 
-                        transitionTo(previousState); 
-                    } 
+                    if (settingsPanel != null && settingsPanel.update(mouseHandler)) transitionTo(previousState); 
                     break;
                 case STATE_EDITOR: updateEditor(); break;
                 case STATE_LEADERBOARD:
-                    if (leaderboardPanel != null && leaderboardPanel.update(mouseHandler)) {
-                        transitionTo(STATE_MENU);
-                    }
+                    if (leaderboardPanel != null && leaderboardPanel.update(mouseHandler)) transitionTo(STATE_MENU);
+                    break;
+                case STATE_ACHIEVEMENTS:
+                    achBackButton.update(mouseHandler);
+                    if(achBackButton.isClicked(mouseHandler)) transitionTo(STATE_MENU);
                     break;
             }
-=======
-        switch (gameState) {
-            case STATE_MENU: updateMenu(); break;
-            case STATE_LEVEL_SELECT: 
-                if (levelSelectPanel != null && levelSelectPanel.update(mouseHandler)) { gameState = STATE_MENU; } 
-                break;
-            case STATE_PLAY: updatePlay(); break;
-            case STATE_PAUSED: 
-                if (pausePanel != null) pausePanel.update(mouseHandler); 
-                break;
-            case STATE_GAME_OVER:
-            case STATE_VICTORY: updateResult(); break;
-            case STATE_SETTINGS: 
-                if (settingsPanel != null && settingsPanel.update(mouseHandler)) { gameState = previousState; } 
-                break;
-            case STATE_EDITOR: updateEditor(); break;
-            case STATE_LEADERBOARD:
-                if (leaderboardPanel != null && leaderboardPanel.update(mouseHandler)) {
-                    gameState = STATE_MENU;
-                }
-            case STATE_ACHIEVEMENTS:
-                achBackButton.update(mouseHandler);
-                if(achBackButton.isClicked(mouseHandler)) gameState = STATE_MENU;
-                break;
->>>>>>> 9691d1e8da6bfdfc2e2a9fdde74887205ddc5ca0
-        }
-
-        if (shopOverlay != null && shopOverlay.isVisible()) {
-            shopOverlay.updateOverlay(mouseHandler);
         }
     }
     
     private void updateMenu() {
-        startButton.update(mouseHandler); settingsButton.update(mouseHandler); leaderboardButton.update(mouseHandler);
-        exitButton.update(mouseHandler); editorButton.update(mouseHandler);achievementButton.update(mouseHandler);
+        startButton.update(mouseHandler); 
+        settingsButton.update(mouseHandler); 
+        leaderboardButton.update(mouseHandler);
+        exitButton.update(mouseHandler); 
+        editorButton.update(mouseHandler);
+        achievementButton.update(mouseHandler);
         
-<<<<<<< HEAD
-        if (startButton.isClicked(mouseHandler)) { transitionTo(STATE_LEVEL_SELECT); }
-=======
-        if (startButton.isClicked(mouseHandler)) {
-             gameState = STATE_LEVEL_SELECT;
-        }
->>>>>>> 9691d1e8da6bfdfc2e2a9fdde74887205ddc5ca0
-        if (settingsButton.isClicked(mouseHandler)) { 
-            previousState = STATE_MENU; 
-            transitionTo(STATE_SETTINGS); 
-        }
-<<<<<<< HEAD
+        if (startButton.isClicked(mouseHandler)) transitionTo(STATE_LEVEL_SELECT); 
+        if (settingsButton.isClicked(mouseHandler)) { previousState = STATE_MENU; transitionTo(STATE_SETTINGS); }
         if (leaderboardButton.isClicked(mouseHandler)) { previousState = STATE_MENU; transitionTo(STATE_LEADERBOARD); }
-        if (editorButton.isClicked(mouseHandler)) { transitionTo(STATE_EDITOR); }
-        if (exitButton.isClicked(mouseHandler)) { System.exit(0); }
-=======
-        if (leaderboardButton.isClicked(mouseHandler)) {
-             previousState = STATE_MENU; gameState = STATE_LEADERBOARD; 
-        }
-        if (editorButton.isClicked(mouseHandler)) {
-             gameState = STATE_EDITOR; 
-        }
-        if (exitButton.isClicked(mouseHandler)) {
-             System.exit(0); 
-        }
-        if (achievementButton.isClicked(mouseHandler)){
-            gameState = STATE_ACHIEVEMENTS;
-        }
-        
->>>>>>> 9691d1e8da6bfdfc2e2a9fdde74887205ddc5ca0
+        if (editorButton.isClicked(mouseHandler)) transitionTo(STATE_EDITOR); 
+        if (exitButton.isClicked(mouseHandler)) System.exit(0); 
+        if (achievementButton.isClicked(mouseHandler)) transitionTo(STATE_ACHIEVEMENTS);
     }
-    
-
     
     private void updateEditor() {
         levelEditor.update(mouseHandler);
-        if (levelEditor.getExitButton().isClicked(mouseHandler)) {
-            transitionTo(STATE_MENU);
-        }
+        if (levelEditor.getExitButton().isClicked(mouseHandler)) transitionTo(STATE_MENU);
     }
     
     private void updatePlay() {
@@ -500,13 +427,11 @@ public class GamePanel extends JPanel implements Runnable {
         if (inputManager.escape && !wasEscPressed) {
             soundManager.playClickSound(); gameState = STATE_PAUSED; wasEscPressed = true; return;
         }
-        if (!inputManager.escape) wasEscPressed = false;
         
         powerUpManager.update(this, paddle);
         
         if (CollisionDetector.isColliding(ball, paddle)) {
             CollisionDetector.handlePaddleCollision(ball, paddle);
-
             if (ball.getVelocity().y < 0) { 
                 startShake(5);
                 soundManager.playHitSound();
@@ -515,67 +440,52 @@ public class GamePanel extends JPanel implements Runnable {
         }
         
         for (Brick brick : mapGenerator.bricks) {
-            if (!brick.isDestroyed) {
-                if (ball.getBounds().intersects(brick.getBounds())) {
-                    CollisionDetector.resolveBallVsRect(ball, brick);
-                    brick.hit();
-                    
-                    comboCount++;
-                    comboScale = 2.0f + (comboCount * 0.1f); 
-                    if (comboScale > 3.0f) comboScale = 3.0f;
-                    
-                    int bonus = (comboCount > 1) ? (comboCount * 10) : 0;
-                    score += (brick.scoreValue + bonus);
-                    
-                    achievementManager.unlock("첫 걸음");
+            if (!brick.isDestroyed && ball.getBounds().intersects(brick.getBounds())) {
+                CollisionDetector.resolveBallVsRect(ball, brick);
+                brick.hit();
+                
+                comboCount++;
+                comboScale = 2.0f + (comboCount * 0.1f); 
+                if (comboScale > 3.0f) comboScale = 3.0f;
+                
+                score += (brick.scoreValue + (comboCount > 1 ? comboCount * 10 : 0));
+                
+                achievementManager.unlock("첫 걸음");
+                if (score >= 10000) achievementManager.unlock("고득점자");
 
-                    if (score >= 10000){
-                        achievementManager.unlock("고득점자");
-                    }
-
-                    if (brick.isDestroyed) {
-                        soundManager.playExplodeSound();
-                        if (brick instanceof breakout.entity.ExplosiveBrick) triggerExplosion(brick);
-                        effectManager.createExplosion(brick.getPosition().x+40, brick.getPosition().y+15, brick.color);
-                        powerUpManager.maybeSpawn(brick.getPosition().x+40, brick.getPosition().y+15);
-                        startShake(15 + Math.min(comboCount, 10)); 
-                    } else {
-                        soundManager.playHitSound();
-                        startShake(5);
-                    }
-                    break; 
+                if (brick.isDestroyed) {
+                    soundManager.playExplodeSound();
+                    if (brick instanceof breakout.entity.ExplosiveBrick) triggerExplosion(brick);
+                    effectManager.createExplosion(brick.getPosition().x+40, brick.getPosition().y+15, brick.color);
+                    powerUpManager.maybeSpawn(brick.getPosition().x+40, brick.getPosition().y+15);
+                    startShake(15 + Math.min(comboCount, 10)); 
+                } else {
+                    soundManager.playHitSound();
+                    startShake(5);
                 }
+                break; 
             }
         }
         
         if (ball.getPosition().y > HEIGHT) {
             lives--;
             startShake(20);
-            if (lives > 0) {
-                soundManager.playFailSound();
-                resetRound(); 
-            } else {
-                soundManager.playFailSound();
+            soundManager.playFailSound();
+            if (lives > 0) resetRound(); 
+            else {
                 gameState = STATE_GAME_OVER;
                 promptAndAddScore(score);
             }
         }
-        long remainingBricks = mapGenerator.bricks.stream().filter(b -> !b.isDestroyed).count();
-        if (remainingBricks == 0) {
-            // --- 업적 체크: 노데스 클리어 ---
-            if (lives == 3) {
-                achievementManager.unlock("생존 전문가");
-            }
-        }
+
         if (mapGenerator.bricks.stream().noneMatch(b -> !b.isDestroyed)) {
+            if (lives == 3) achievementManager.unlock("생존 전문가");
             gameState = STATE_VICTORY;
             promptAndAddScore(score);
             soundManager.stopBGM();
             soundManager.playVictorySound();
         }
     }
-    
-
     
     private void promptAndAddScore(int score) {
         if (!scoreManager.isHighScore(score)) return;
@@ -594,76 +504,46 @@ public class GamePanel extends JPanel implements Runnable {
         if (gameState == STATE_VICTORY) {
             victoryLevelButton.update(mouseHandler); 
             if (victoryLevelButton.isClicked(mouseHandler)) {
-<<<<<<< HEAD
-                soundManager.playClickSound();
                 soundManager.playBGM("Bgm.wav");
-                gameState = STATE_LEVEL_SELECT; 
-=======
                 transitionTo(STATE_LEVEL_SELECT); 
->>>>>>> 49880c1f915c895f519260ec2f33ea8493d0870d
             }
         }
         
         if (restartButton.isClicked(mouseHandler)) { 
-<<<<<<< HEAD
-            soundManager.playClickSound();
             soundManager.playBGM("Bgm.wav");
-            startGameWithLevel(currentLevel);
-         }
-         
-        if (menuButton.isClicked(mouseHandler)) { 
-            soundManager.playClickSound();
-            soundManager.playBGM("Bgm.wav");
-            gameState = STATE_MENU; 
-        
-        }
-=======
             startGameWithLevel(currentLevel); 
         }
-        if (menuButton.isClicked(mouseHandler)) { transitionTo(STATE_MENU); }
->>>>>>> 49880c1f915c895f519260ec2f33ea8493d0870d
+        if (menuButton.isClicked(mouseHandler)) { 
+            soundManager.playBGM("Bgm.wav");
+            transitionTo(STATE_MENU); 
+        }
     }
     
-
-
     // Settings accessors (used by SettingsPanel)
     public boolean isSoundOn() { return isSoundOn; }
     public void toggleSound() { isSoundOn = !isSoundOn; soundManager.setMute(!isSoundOn); }
     public void prevBackground() { currentBgIndex = (currentBgIndex-1+6)%6; changeBackgroundBGM(); }
     public void nextBackground() { currentBgIndex = (currentBgIndex+1)%6; changeBackgroundBGM(); }
 
-    public int getBallColorIndex() { return ballColorIndex; }
-    public void setBallColorIndex(int idx) { ballColorIndex = idx; }
     public void cycleBallColor() { ballColorIndex = (ballColorIndex+1)%colorList.length; }
     public String getBallColorName() { return colorNames[ballColorIndex]; }
 
-    public int getBallSkinIndex() { return currentSkinIndex; }
-    public void setBallSkinIndex(int idx) { currentSkinIndex = idx; }
     public void cycleBallSkin() { currentSkinIndex++; if (currentSkinIndex >= 4) currentSkinIndex = -1; applyBallSkin(); }
     public String getBallSkinName() { return (currentSkinIndex == -1) ? "없음" : "학생회 " + (currentSkinIndex + 1); }
 
-    public int getPaddleColorIndex() { return paddleColorIndex; }
-    public void setPaddleColorIndex(int idx) { paddleColorIndex = idx; if (paddle != null) paddle.setColor(colorList[paddleColorIndex]); }
     public void cyclePaddleColor() { paddleColorIndex = (paddleColorIndex + 1) % colorList.length; if (paddle != null) paddle.setColor(colorList[paddleColorIndex]); }
     public String getPaddleColorName() { return colorNames[paddleColorIndex]; }
 
-    public int getPaddleShapeIndex() { return paddleShapeIndex; }
-    public void setPaddleShapeIndex(int idx) { paddleShapeIndex = idx; if (paddle != null) paddle.setShapeType(paddleShapeIndex); }
     public void cyclePaddleShape() { paddleShapeIndex = (paddleShapeIndex + 1) % 4; if (paddle != null) paddle.setShapeType(paddleShapeIndex); }
     public String getPaddleShapeName() { return shapeNames[paddleShapeIndex]; }
 
-    public int getBrickColorIndex() { return brickColorIndex; }
-    public void setBrickColorIndex(int idx) { brickColorIndex = idx; applyCustomColors(); }
     public void cycleBrickColor() { brickColorIndex = (brickColorIndex+1)%colorList.length; applyCustomColors(); }
     public String getBrickColorName() { return colorNames[brickColorIndex]; }
 
-    // expose paddle for preview in SettingsPanel
     public Paddle getPaddle() { return paddle; }
     
     private void changeBackgroundBGM() {
-        if (isSoundOn) {
-            soundManager.playBGM("Bgm.wav");
-        }
+        if (isSoundOn) soundManager.playBGM("Bgm.wav");
     }
     
     @Override
@@ -687,79 +567,58 @@ public class GamePanel extends JPanel implements Runnable {
         
         switch (gameState) {
             case STATE_MENU: drawMenu(dbg); break;
-            case STATE_LEVEL_SELECT: 
-                if (levelSelectPanel != null) levelSelectPanel.draw(dbg, customFont);
-                break;
-            case STATE_PLAY:
-                mapGenerator.draw(dbg); paddle.draw(dbg); 
-                dbg.setColor(colorList[ballColorIndex]); ball.draw(dbg); 
-                effectManager.draw(dbg); powerUpManager.draw(dbg); drawHUD(dbg); break;
-            case STATE_PAUSED:
-                mapGenerator.draw(dbg); paddle.draw(dbg); 
-                dbg.setColor(colorList[ballColorIndex]); ball.draw(dbg); 
-                if (pausePanel != null) pausePanel.draw(dbg, customFont); break;
-            case STATE_GAME_OVER:
-                mapGenerator.draw(dbg); paddle.draw(dbg); 
-                dbg.setColor(colorList[ballColorIndex]); ball.draw(dbg); 
-                effectManager.draw(dbg); drawResult(dbg, "GAME OVER", Color.RED); break;
-            case STATE_VICTORY:
-                mapGenerator.draw(dbg); paddle.draw(dbg); 
-                dbg.setColor(colorList[ballColorIndex]); ball.draw(dbg); 
-                effectManager.draw(dbg); drawResult(dbg, "STAGE CLEAR!", Color.GREEN); break;
-            case STATE_SETTINGS: 
-                if (settingsPanel != null) settingsPanel.draw(dbg, customFont); 
-                break;
+            case STATE_LEVEL_SELECT: if (levelSelectPanel != null) levelSelectPanel.draw(dbg, customFont); break;
+            case STATE_PLAY: drawPlay(dbg); break;
+            case STATE_PAUSED: drawPaused(dbg); break;
+            case STATE_GAME_OVER: drawResult(dbg, "GAME OVER", Color.RED); break;
+            case STATE_VICTORY: drawResult(dbg, "STAGE CLEAR!", Color.GREEN); break;
+            case STATE_SETTINGS: if (settingsPanel != null) settingsPanel.draw(dbg, customFont); break;
             case STATE_EDITOR: levelEditor.draw(dbg, customFont); break;
-            case STATE_LEADERBOARD:
-                if (leaderboardPanel != null) leaderboardPanel.draw(dbg, customFont);
-                break;
-            case STATE_ACHIEVEMENTS:
-                drawAchievements(dbg);
-                break;
+            case STATE_LEADERBOARD: if (leaderboardPanel != null) leaderboardPanel.draw(dbg, customFont); break;
+            case STATE_ACHIEVEMENTS: drawAchievements(dbg); break;
         }
         
         if (sx != 0 || sy != 0) dbg.translate(-sx, -sy);
         
         if (isFading && fadeAlpha > 0.01f) {
-            float alpha = Math.max(0.0f, Math.min(1.0f, fadeAlpha));
-            dbg.setColor(new Color(0, 0, 0, alpha)); 
+            dbg.setColor(new Color(0, 0, 0, Math.max(0.0f, Math.min(1.0f, fadeAlpha)))); 
             dbg.fillRect(0, 0, WIDTH, HEIGHT);
         }
 
-        if (isCRTFilterOn) {
-            dbg.setColor(new Color(0, 0, 0, 50)); 
-            for (int y = 0; y < HEIGHT; y += 4) { 
-                dbg.fillRect(0, y, WIDTH, 2);
-            }
-            
-            java.awt.geom.Point2D center = new java.awt.geom.Point2D.Float(WIDTH / 2, HEIGHT / 2);
-            float radius = WIDTH;
-            float[] dist = {0.0f, 0.5f, 1.0f};
-            Color[] colors = {
-                new Color(0, 0, 0, 0),    
-                new Color(0, 0, 0, 0),    
-                new Color(0, 0, 0, 150)   
-            };
-            java.awt.RadialGradientPaint p = new java.awt.RadialGradientPaint(center, radius, dist, colors);
-            dbg.setPaint(p);
-            dbg.fillRect(0, 0, WIDTH, HEIGHT);
-        }
+        if (isCRTFilterOn) drawCRTFilter(dbg);
 
-        if (gameState == STATE_MENU) {
-            Toolkit.getDefaultToolkit().sync(); 
-        }
+        if (gameState == STATE_MENU) Toolkit.getDefaultToolkit().sync(); 
     }
 
-    // ... (나머지 그리기 메서드들은 그대로 유지) ...
-    // 내용 생략 (drawMenu, drawHUD 등은 이전과 동일합니다)
-    
+    private void drawPlay(Graphics2D dbg) {
+        mapGenerator.draw(dbg); paddle.draw(dbg); 
+        dbg.setColor(colorList[ballColorIndex]); ball.draw(dbg); 
+        effectManager.draw(dbg); powerUpManager.draw(dbg); drawHUD(dbg);
+    }
+
+    private void drawPaused(Graphics2D dbg) {
+        mapGenerator.draw(dbg); paddle.draw(dbg); 
+        dbg.setColor(colorList[ballColorIndex]); ball.draw(dbg); 
+        if (pausePanel != null) pausePanel.draw(dbg, customFont);
+    }
+
+    private void drawCRTFilter(Graphics2D dbg) {
+        dbg.setColor(new Color(0, 0, 0, 50)); 
+        for (int y = 0; y < HEIGHT; y += 4) dbg.fillRect(0, y, WIDTH, 2);
+        
+        java.awt.RadialGradientPaint p = new java.awt.RadialGradientPaint(
+            new java.awt.geom.Point2D.Float(WIDTH / 2, HEIGHT / 2), WIDTH, 
+            new float[]{0.0f, 0.5f, 1.0f}, 
+            new Color[]{new Color(0,0,0,0), new Color(0,0,0,0), new Color(0,0,0,150)});
+        dbg.setPaint(p);
+        dbg.fillRect(0, 0, WIDTH, HEIGHT);
+    }
+
     private void drawCentered3DText(Graphics2D g2, String text, int y, Color mainColor, Color shadowColor, float size) {
         if (customFont != null) g2.setFont(customFont.deriveFont(Font.BOLD, size));
         else g2.setFont(new Font("SansSerif", Font.BOLD, (int)size));
-        
         FontMetrics fm = g2.getFontMetrics();
         int x = (WIDTH - fm.stringWidth(text)) / 2;
-        
         g2.setColor(shadowColor);
         for(int i = 5; i > 0; i--) g2.drawString(text, x + i, y + i);
         g2.setColor(mainColor);
@@ -769,108 +628,61 @@ public class GamePanel extends JPanel implements Runnable {
     private void drawMenu(Graphics2D g2) {
         if (menuGifImage != null) g2.drawImage(menuGifImage, 0, 0, WIDTH, HEIGHT, this);
         else { g2.setColor(Color.BLACK); g2.fillRect(0, 0, WIDTH, HEIGHT); }
-        
         drawCentered3DText(g2, "샤갈적인 벽돌깨기", 150, Color.YELLOW, Color.DARK_GRAY, 70f);
         drawCentered3DText(g2, "⚜️태풍을 부르는 학생회의 반란⚜️", 210, Color.WHITE, Color.BLACK, 30f);
-        
         g2.setColor(Color.CYAN);
         g2.setFont(new Font("Consolas", Font.BOLD, 20));
         drawCenteredString(g2, "HIGH SCORE: " + scoreManager.getHighScore(), WIDTH/2, 550);
-        
-        startButton.draw(g2, customFont); 
-        settingsButton.draw(g2, customFont); 
-        leaderboardButton.draw(g2, customFont); 
-        editorButton.draw(g2, customFont); 
-        achievementButton.draw(g2, customFont);
-        exitButton.draw(g2, customFont);
+        startButton.draw(g2, customFont); settingsButton.draw(g2, customFont); 
+        leaderboardButton.draw(g2, customFont); editorButton.draw(g2, customFont); 
+        achievementButton.draw(g2, customFont); exitButton.draw(g2, customFont);
     }
-    
-
     
     private void drawHUD(Graphics2D g2) {
         g2.setColor(new Color(0, 0, 0, 100));
         g2.fillRect(0, 0, WIDTH, 40);
         g2.setColor(Color.WHITE);
         g2.setFont(new Font("Consolas", Font.BOLD, 24));
-        
         g2.drawString("SCORE: " + score, 20, 28);
         g2.drawString("LIVES:", WIDTH - 200, 28); 
-
-        int maxHearts = 3;
-        int heartsToDraw = Math.min(lives, maxHearts);
-        int extraLives = lives - maxHearts;
-
-        for (int i = 0; i < heartsToDraw; i++) {
-            drawHeart(g2, WIDTH - 120 + (i * 30), 10);
+        for (int i = 0; i < Math.min(lives, 3); i++) drawHeart(g2, WIDTH - 120 + (i * 30), 10);
+        if (lives > 3) {
+            g2.setColor(Color.yellow); g2.setFont(new Font("Consolas", Font.BOLD, 20));
+            g2.drawString("+" + (lives-3), WIDTH - 25, 28);
         }
+        if (comboCount >= 2) drawCombo(g2);
+    }
 
-        if (extraLives > 0) {
-            g2.setColor(Color.yellow);
-            g2.setFont(new Font("Consolas", Font.BOLD, 20));
-            g2.drawString("+" + extraLives, WIDTH - 25, 28);
-        }
-        
-        if (comboCount >= 2) {
-            int fontSize = (int)(40 * comboScale); 
-            g2.setFont(new Font("Consolas", Font.BOLD, fontSize));
-            
-            long time = System.currentTimeMillis();
-            Color[] flashingColors = { Color.RED, Color.ORANGE, Color.YELLOW, Color.WHITE, Color.MAGENTA, Color.CYAN };
-            int colorIndex = (int)((time / 50) % flashingColors.length); 
-            Color mainColor = flashingColors[colorIndex];
-            
-            String comboText = comboCount + " COMBO!";
-            FontMetrics fm = g2.getFontMetrics();
-            int tw = fm.stringWidth(comboText);
-            
-            int jitterX = 0, jitterY = 0;
-            if (comboScale > 1.2f) { 
-                jitterX = (int)(Math.random() * 10 - 5);
-                jitterY = (int)(Math.random() * 10 - 5);
-            }
-            
-            int drawX = WIDTH/2 - tw/2 + jitterX;
-            int drawY = 80 + jitterY;
-
-            g2.setColor(Color.DARK_GRAY);
-            for (int i = 1; i <= 8; i++) {
-                g2.drawString(comboText, drawX + i, drawY + i);
-            }
-            g2.setColor(mainColor);
-            g2.drawString(comboText, drawX, drawY);
-        }
+    private void drawCombo(Graphics2D g2) {
+        g2.setFont(new Font("Consolas", Font.BOLD, (int)(40 * comboScale)));
+        Color[] flash = { Color.RED, Color.ORANGE, Color.YELLOW, Color.WHITE, Color.MAGENTA, Color.CYAN };
+        g2.setColor(flash[(int)((System.currentTimeMillis() / 50) % flash.length)]);
+        String text = comboCount + " COMBO!";
+        int x = WIDTH/2 - g2.getFontMetrics().stringWidth(text)/2 + (comboScale > 1.2f ? (int)(Math.random()*10-5) : 0);
+        int y = 80 + (comboScale > 1.2f ? (int)(Math.random()*10-5) : 0);
+        g2.drawString(text, x, y);
     }
     
     private void drawHeart(Graphics2D g2, int x, int y) {
         g2.setColor(Color.RED); g2.fillOval(x, y, 10, 10); g2.fillOval(x + 10, y, 10, 10); 
         int[] xp = {x, x + 10, x + 20}; int[] yp = {y + 5, y + 20, y + 5}; g2.fillPolygon(xp, yp, 3);
     }
+
     private void drawAchievements(Graphics2D g2) {
-        g2.setColor(new Color(0, 0, 0, 200));
-        g2.fillRect(0, 0, WIDTH, HEIGHT);
-        
-        g2.setColor(Color.YELLOW);
-        g2.setFont(new Font("Consolas", Font.BOLD, 40));
+        g2.setColor(new Color(0, 0, 0, 200)); g2.fillRect(0, 0, WIDTH, HEIGHT);
+        g2.setColor(Color.YELLOW); g2.setFont(new Font("Consolas", Font.BOLD, 40));
         drawCenteredString(g2, "ACHIEVEMENTS", WIDTH / 2, 80);
-        
-        g2.setFont(new Font("Malgun Gothic", Font.PLAIN, 18));
-        List<Achievement> list = achievementManager.getAchievements(); //
-        
+        List<Achievement> list = achievementManager.getAchievements(); 
         for (int i = 0; i < list.size(); i++) {
             Achievement a = list.get(i);
             int y = 150 + (i * 60);
-            
-            // 달성 여부에 따라 색상 변경
             g2.setColor(a.isUnlocked ? Color.GREEN : Color.GRAY);
-            g2.drawString(a.isUnlocked ? "✔ " + a.title : "🔒 " + a.title, 150, y);
-            
-            g2.setColor(Color.WHITE);
-            g2.setFont(new Font("Malgun Gothic", Font.ITALIC, 14));
-            g2.drawString(a.description, 150, y + 20);
             g2.setFont(new Font("Malgun Gothic", Font.PLAIN, 18));
+            g2.drawString((a.isUnlocked ? "✔ " : "🔒 ") + a.title, 150, y);
+            g2.setColor(Color.WHITE); g2.setFont(new Font("Malgun Gothic", Font.ITALIC, 14));
+            g2.drawString(a.description, 150, y + 20);
         }
-    
-        achBackButton.draw(g2, customFont); //
+        achBackButton.draw(g2, customFont); 
     }
     
     private void drawResult(Graphics2D g2, String title, Color color) {
@@ -878,15 +690,9 @@ public class GamePanel extends JPanel implements Runnable {
         g2.setColor(color); g2.setFont(new Font("Arial", Font.BOLD, 50));
         drawCenteredString(g2, title, WIDTH/2, 200);
         g2.setColor(Color.WHITE); g2.setFont(new Font("Consolas", Font.BOLD, 30));
-        
         drawCenteredString(g2, "Final Score: " + score, WIDTH/2, 280); 
-        
         restartButton.draw(g2, customFont);
-        
-        if (gameState == STATE_VICTORY) {
-            victoryLevelButton.draw(g2, customFont);
-        }
-        
+        if (gameState == STATE_VICTORY) victoryLevelButton.draw(g2, customFont);
         menuButton.draw(g2, customFont);
     }
     
@@ -895,9 +701,7 @@ public class GamePanel extends JPanel implements Runnable {
     }
     
     private void triggerExplosion(Brick centerBrick) {
-        int ex = (int) (centerBrick.getPosition().x - centerBrick.getWidth());
-        int ey = (int) (centerBrick.getPosition().y - centerBrick.getHeight());
-        Rectangle area = new Rectangle(ex, ey, (int)centerBrick.getWidth()*3, (int)centerBrick.getHeight()*3);
+        Rectangle area = new Rectangle((int)(centerBrick.getPosition().x - centerBrick.getWidth()), (int)(centerBrick.getPosition().y - centerBrick.getHeight()), (int)centerBrick.getWidth()*3, (int)centerBrick.getHeight()*3);
         for (Brick b : mapGenerator.bricks) {
             if (!b.isDestroyed && b != centerBrick && area.intersects(b.getBounds())) {
                 b.hit(); 
@@ -910,8 +714,5 @@ public class GamePanel extends JPanel implements Runnable {
         startShake(20); 
     }
     
-    // ★ [추가] 현재 선택된 공 색상을 반환하는 메서드
-    public Color getCurrentBallColor() {
-        return colorList[ballColorIndex];
-    }
+    public Color getCurrentBallColor() { return colorList[ballColorIndex]; }
 }
