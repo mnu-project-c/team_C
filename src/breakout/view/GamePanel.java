@@ -64,6 +64,7 @@ public class GamePanel extends JPanel implements Runnable {
     private Ball ball;
     private MapGenerator mapGenerator;
     
+    // 버튼들
     private GameButton shopButton;
     private GameButton startButton, settingsButton, exitButton, editorButton;
     private GameButton restartButton, menuButton;
@@ -71,11 +72,12 @@ public class GamePanel extends JPanel implements Runnable {
     private GameButton resumeButton;
     private GameButton prevBgButton, nextBgButton;
     
-    // 색상/스킨 관련 버튼
+    // 색상/스킨/모양 관련 버튼
     private GameButton ballColorButton, brickColorButton;
     private GameButton ballSkinButton;
-    private GameButton paddleColorButton; // ★ 패들 색상 버튼 추가
-
+    private GameButton paddleColorButton;
+    private GameButton paddleShapeButton; 
+    
     private GameButton pauseSettingsButton;   
     private GameButton victoryLevelButton;    
     
@@ -110,9 +112,13 @@ public class GamePanel extends JPanel implements Runnable {
     private final Color[] colorList = { Color.RED, Color.ORANGE, Color.YELLOW, Color.GREEN, Color.BLUE, Color.MAGENTA, Color.WHITE, Color.CYAN };
     private final String[] colorNames = { "빨강", "주황", "노랑", "초록", "파랑", "보라", "흰색", "하늘" };
     
+    
+    private final String[] shapeNames = { "기본", "알약", "샤프", "파도" };
+    
     private int ballColorIndex = 0; 
     private int brickColorIndex = 2;
-    private int paddleColorIndex = 7; // ★ 패들 색상 인덱스 (기본값: 하늘색)
+    private int paddleColorIndex = 7; 
+    private int paddleShapeIndex = 0; // 0:Rect, 1:Round, 2:Diamond, 3:Wave
     
     private int currentLevel = 1;
 
@@ -195,25 +201,19 @@ public class GamePanel extends JPanel implements Runnable {
         int startY = 270;
         int gap = 60;
         
-        // 메인 메뉴 버튼
         startButton = new GameButton(centerX, startY, 200, 50, "게임 시작");
         settingsButton = new GameButton(centerX, startY + gap, 200, 50, "설정");
         editorButton = new GameButton(centerX, startY + gap * 2, 200, 50, "레벨 에디터");
         exitButton = new GameButton(centerX, startY + gap * 3, 200, 50, "게임 종료");
         
-        // 게임 오버/승리 화면 버튼
         restartButton = new GameButton(centerX, 340, 200, 50, "다시 시작");
         victoryLevelButton = new GameButton(centerX, 400, 200, 50, "레벨 선택"); 
         menuButton = new GameButton(centerX, 460, 200, 50, "메인 메뉴");
         
-        // 일시정지 화면 버튼
         resumeButton = new GameButton(centerX, 280, 200, 50, "계속하기");
         shopButton   = new GameButton(centerX, 340, 200, 50, "상점");
         pauseSettingsButton = new GameButton(centerX, 400, 200, 50, "설정"); 
         
-        // 설정 메뉴 버튼 (위치 재조정 및 패들 버튼 추가)
-        // 기존 Y: 150(Sound), 210(BG), 270(Ball), 330(Skin), 390(Brick), 500(Back)
-        // 버튼이 하나 늘어나므로 간격을 40~50 정도로 조금씩 당깁니다.
         int setY = 130;
         int setGap = 50;
         
@@ -224,13 +224,13 @@ public class GamePanel extends JPanel implements Runnable {
         ballColorButton = new GameButton(centerX, setY + setGap*2, 200, 40, "공 색상: 빨강");
         ballSkinButton = new GameButton(centerX, setY + setGap*3, 200, 40, "공 스킨: 없음");
         
-        // ★ 패들 색상 버튼 추가
-        paddleColorButton = new GameButton(centerX, setY + setGap*4, 200, 40, "판 색상: 하늘");
+        // ★ 패들 색상/모양 버튼 초기 위치
+        paddleColorButton = new GameButton(centerX - 110, setY + setGap*4, 200, 40, "판 색상: 하늘");
+        paddleShapeButton = new GameButton(centerX + 110, setY + setGap*4, 200, 40, "판 모양: 기본");
         
         brickColorButton = new GameButton(centerX, setY + setGap*5, 200, 40, "벽돌: 노랑");
         backButton = new GameButton(centerX, 500, 200, 50, "뒤로가기");
         
-        // 레벨 선택 버튼
         lvl1Button = new GameButton(centerX, 200, 200, 50, "1단계");
         lvl2Button = new GameButton(centerX, 270, 200, 50, "2단계");
         lvl3Button = new GameButton(centerX, 340, 200, 50, "3단계");
@@ -240,7 +240,8 @@ public class GamePanel extends JPanel implements Runnable {
     
     private void initGameObjects() {
         paddle = new Paddle(WIDTH / 2 - 50, HEIGHT - 60, inputManager);
-        paddle.setColor(colorList[paddleColorIndex]); // ★ 패들 색상 적용
+        paddle.setColor(colorList[paddleColorIndex]); 
+        paddle.setShapeType(paddleShapeIndex);
         
         ball = new Ball(WIDTH / 2 - 10, HEIGHT - 100);
         applyBallSkin(); 
@@ -271,7 +272,8 @@ public class GamePanel extends JPanel implements Runnable {
 
     private void resetGame() {
         paddle = new Paddle(WIDTH / 2 - 50, HEIGHT - 60, inputManager);
-        paddle.setColor(colorList[paddleColorIndex]); // ★ 패들 색상 적용
+        paddle.setColor(colorList[paddleColorIndex]);
+        paddle.setShapeType(paddleShapeIndex);
         
         ball = new Ball(WIDTH / 2 - 10, HEIGHT - 100);
         applyBallSkin(); 
@@ -512,8 +514,8 @@ public class GamePanel extends JPanel implements Runnable {
         nextBgButton.update(mouseHandler); 
         ballColorButton.update(mouseHandler);
         ballSkinButton.update(mouseHandler);
-        // ★ 패들 색상 버튼 업데이트
         paddleColorButton.update(mouseHandler);
+        paddleShapeButton.update(mouseHandler); 
         brickColorButton.update(mouseHandler); 
         backButton.update(mouseHandler);
         
@@ -536,18 +538,29 @@ public class GamePanel extends JPanel implements Runnable {
             soundManager.playClickSound();
             currentSkinIndex++;
             if (currentSkinIndex >= 4) currentSkinIndex = -1;
-            String skinName = (currentSkinIndex == -1) ? "없음" : "스킨 " + (currentSkinIndex + 1);
+            String skinName = (currentSkinIndex == -1) ? "없음" : "학생회 " + (currentSkinIndex + 1);
             ballSkinButton = new GameButton(WIDTH/2 - 100, 280, 200, 40, "공 스킨: " + skinName);
             applyBallSkin(); 
         }
 
-        // ★ 패들 색상 버튼 클릭 처리
+        // ★ 버튼 클릭 시 좌표 재설정 버그 수정 (initUI와 동일한 X좌표 사용)
         if (paddleColorButton.isClicked(mouseHandler)) {
             soundManager.playClickSound();
             paddleColorIndex = (paddleColorIndex + 1) % colorList.length;
-            paddleColorButton = new GameButton(WIDTH/2 - 100, 330, 200, 40, "판 색상: " + colorNames[paddleColorIndex]);
+            // WIDTH/2 - 100(센터) - 110 = WIDTH/2 - 210
+            paddleColorButton = new GameButton(WIDTH/2 - 210, 330, 200, 40, "판 색상: " + colorNames[paddleColorIndex]);
             if (paddle != null) {
                 paddle.setColor(colorList[paddleColorIndex]);
+            }
+        }
+        
+        if (paddleShapeButton.isClicked(mouseHandler)) {
+            soundManager.playClickSound();
+            paddleShapeIndex = (paddleShapeIndex + 1) % 4;
+            // WIDTH/2 - 100(센터) + 110 = WIDTH/2 + 10
+            paddleShapeButton = new GameButton(WIDTH/2 + 10, 330, 200, 40, "판 모양: " + shapeNames[paddleShapeIndex]);
+            if (paddle != null) {
+                paddle.setShapeType(paddleShapeIndex);
             }
         }
 
@@ -637,7 +650,7 @@ public class GamePanel extends JPanel implements Runnable {
         else { g2.setColor(Color.BLACK); g2.fillRect(0, 0, WIDTH, HEIGHT); }
         
         drawCentered3DText(g2, "샤갈적인 벽돌깨기", 150, Color.YELLOW, Color.DARK_GRAY, 70f);
-        drawCentered3DText(g2, "~학생회의 반란~", 210, Color.WHITE, Color.BLACK, 30f);
+        drawCentered3DText(g2, "⚜️태풍을 부르는 학생회의 반란⚜️", 210, Color.WHITE, Color.BLACK, 30f);
         
         g2.setColor(Color.CYAN);
         g2.setFont(new Font("Consolas", Font.BOLD, 20));
@@ -733,9 +746,24 @@ public class GamePanel extends JPanel implements Runnable {
         nextBgButton.draw(g2, customFont); 
         ballColorButton.draw(g2, customFont); 
         ballSkinButton.draw(g2, customFont);
-        paddleColorButton.draw(g2, customFont); // ★ 패들 색상 버튼 그리기
+        
+        paddleColorButton.draw(g2, customFont); 
+        paddleShapeButton.draw(g2, customFont); 
+        
         brickColorButton.draw(g2, customFont); 
         backButton.draw(g2, customFont);
+        
+        if (paddle != null) {
+            double oldX = paddle.getPosition().x;
+            double oldY = paddle.getPosition().y;
+            
+            paddle.getPosition().x = WIDTH / 2 - 50; 
+            paddle.getPosition().y = 450;
+            paddle.draw(g2); 
+            
+            paddle.getPosition().x = oldX;
+            paddle.getPosition().y = oldY;
+        }
     }
     
     private void drawPause(Graphics2D g2) {
@@ -755,7 +783,6 @@ public class GamePanel extends JPanel implements Runnable {
         drawCenteredString(g2, title, WIDTH/2, 200);
         g2.setColor(Color.WHITE); g2.setFont(new Font("Consolas", Font.BOLD, 30));
         
-        // ★ [수정됨] 점수 오류 수정: 문자열과 변수가 제대로 결합되도록 수정
         drawCenteredString(g2, "Final Score: " + score, WIDTH/2, 280); 
         
         restartButton.draw(g2, customFont);
