@@ -701,7 +701,20 @@ public class GamePanel extends JPanel implements Runnable {
         applyBallSkin();
     }
     public void applyBallSkin() { for (Ball b : balls) { applyBallSkinToBall(b); } }
-    public String getBallSkinName() { return (currentSkinIndex == -1) ? "없음" : "학생회 " + (currentSkinIndex + 1); }
+    public String getBallSkinName() {
+        if (currentSkinIndex == -1) {
+            return "기본";
+        }
+        
+        String skinName = "학생회 " + (currentSkinIndex + 1);
+        
+        // 현재 스킨이 잠겨있는지 확인
+        if (!isSkinUnlocked(currentSkinIndex)) {
+            return (currentSkinIndex + 1)+" [🔒]";
+        }
+        
+        return skinName;
+    }
     public void cyclePaddleColor() {
         paddleColorIndex = (paddleColorIndex + 1) % colorList.length;
         if (paddle != null) paddle.setColor(colorList[paddleColorIndex]);

@@ -143,7 +143,7 @@ public class SettingsPanel {
         
         // 공 & 패들 버튼
         ballColorButton.draw(g, font);
-        ballSkinButton.draw(g, font);
+        ballSkinButton.draw(g, font); 
         paddleColorButton.draw(g, font);
         paddleShapeButton.draw(g, font);
         
