@@ -25,6 +25,8 @@ public class SoundManager {
     public static final String SOUND_WALL    = "hit.wav";
     public static final String SOUND_BUY     = "buy.wav";
     public static final String SOUND_ERROR   = "error.wav";    
+    public static final String SOUND_GAMEOVER = "GameOver.wav";
+    public static final String SOUND_BOMB = "bomb.wav";
 
     private Map<String, Clip> clipCache;
     private Clip currentBgmClip;
@@ -61,7 +63,8 @@ public class SoundManager {
     public void playWallSound()    { playSound(SOUND_WALL); }
     public void playBuySound()     { playSound(SOUND_BUY); }
     public void playErrorSound()   { playSound(SOUND_ERROR); }
-
+    public void playGameOverSound() { playSound(SOUND_GAMEOVER); }
+    public void playBombSound() { playSound(SOUND_BOMB);}
     public void playSound(String fileName) {
         if (isMuted) return;
         try {
