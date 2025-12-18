@@ -19,7 +19,6 @@ public class Ball extends GameObject {
     private final double SPEED = 5.0;
     private Image skin;
     
-    // 잔상 효과를 위한 리스트
     private List<Vector2D> trailHistory = new ArrayList<>();
     private int maxTrailSize = 10; 
     
@@ -40,30 +39,23 @@ public class Ball extends GameObject {
         position.x += velocity.x;
         position.y += velocity.y;
 
-        // 2. 벽 충돌 처리 (draw 메서드에 있던 것을 이쪽으로 이동)
-        if (position.x < 0) {
-            position.x = 0;
-            velocity.x = -velocity.x;
-        }
-        if (position.x + width > GamePanel.WIDTH) {
-            position.x = GamePanel.WIDTH - width;
-            velocity.x = -velocity.x;
-        }
-        if (position.y < 0) {
-            position.y = 0;
-            velocity.y = -velocity.y;
-        }
-
-        // 3. 잔상 데이터 업데이트
-        trailHistory.add(new Vector2D(position.x, position.y));
-        if (trailHistory.size() > maxTrailSize) {
-            trailHistory.remove(0);
-        }
+       // if (position.x < 0) { position.x = 0; velocity.x = -velocity.x; }
+       // if (position.x > GamePanel.WIDTH - width) { position.x = GamePanel.WIDTH - width; velocity.x = -velocity.x; }
+       // if (position.y < 0) { position.y = 0; velocity.y = -velocity.y; }
     }
 
     @Override
     public void draw(Graphics2D g) {
-        java.awt.Composite originalComposite = g.getComposite();
+        int x = (int)position.x;
+        int y = (int)position.y;
+        int w = (int)width;
+        int h = (int)height;
+        
+        trailHistory.add(new Vector2D(position.x, position.y));
+        if (trailHistory.size() > maxTrailSize) {
+            trailHistory.remove(0);
+        }
+         java.awt.Composite originalComposite = g.getComposite();
         
         // 1. 잔상 그리기
         for (int i = 0; i < trailHistory.size(); i++) {
@@ -83,6 +75,9 @@ public class Ball extends GameObject {
         }
         
         g.setComposite(originalComposite); // 투명도 복구
+    
+
+    
 
         // 2. 공 본체 그리기
         if (skin != null) {
