@@ -23,7 +23,6 @@ public class ScoreManager {
         load();
     }
 
-    // load JSON array or migrate old simple integer format
     public void load() {
         entries.clear();
         try {
@@ -40,7 +39,6 @@ public class ScoreManager {
             if (content.isEmpty()) return;
 
             if (content.startsWith("[")) {
-                // simple JSON array parsing (limited but sufficient for our format)
                 int idx = 0;
                 while (true) {
                     int objStart = content.indexOf('{', idx);
