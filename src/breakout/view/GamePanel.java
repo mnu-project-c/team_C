@@ -111,12 +111,8 @@ public class GamePanel extends JPanel implements Runnable {
     private int ballColorIndex = 0; 
     private int brickColorIndex = 2;
     private int paddleColorIndex = 7; 
-<<<<<<< HEAD
-    private int paddleShapeIndex = 0; // 0:Rect, 1:Round, 2:Diamond, 3:Wave
-    private final Random rng = new Random();
-=======
     private int paddleShapeIndex = 0; 
->>>>>>> 49880c1f915c895f519260ec2f33ea8493d0870d
+    private final Random rng = new Random();
     
     private int currentLevel = 1;
     private boolean doubleScoreActive = false;
@@ -125,9 +121,6 @@ public class GamePanel extends JPanel implements Runnable {
     private int piercingTimer = 0;
     private boolean slowBallActive = false;
     private int slowBallTimer = 0;
-    private enum LuckyPrize {
-        EXTRA_LIFE, WIDE_PADDLE, SLOW_BALL, PIERCING_BALL, DOUBLE_SCORE
-    }
 
     private float fadeAlpha = 0.0f;    
     private boolean isFading = false;  
@@ -170,6 +163,8 @@ public class GamePanel extends JPanel implements Runnable {
         applyCustomColors();
     }
     
+    // ... loadResources, initUI, initGameObjects 등의 초기화 로직은 기존과 동일
+
     private void loadResources() {
         backgrounds = new BufferedImage[6];
         for(int i=0; i<6; i++) {
@@ -211,16 +206,12 @@ public class GamePanel extends JPanel implements Runnable {
     }
     
     private void initUI() {
-        int centerX = WIDTH / 2 - 100;
-        int startY = 270;
-        int gap = 60;
-        
-        startButton = createCenteredButton(startY, 200, 50, "게임 시작");
-        settingsButton = createCenteredButton(startY + gap, 200, 50, "설정");
-        leaderboardButton = createCenteredButton(startY + gap * 2, 200, 50, "랭킹");
-        achievementButton = createCenteredButton(startY + gap * 3, 200, 50, "업적");
-        editorButton = createCenteredButton(startY + gap * 4, 200, 50, "레벨 에디터");
-        exitButton = createCenteredButton(startY + gap * 5, 200, 50, "게임 종료");
+        startButton = createCenteredButton(270, 200, 50, "게임 시작");
+        settingsButton = createCenteredButton(330, 200, 50, "설정");
+        leaderboardButton = createCenteredButton(390, 200, 50, "랭킹");
+        achievementButton = createCenteredButton(450, 200, 50, "업적");
+        editorButton = createCenteredButton(510, 200, 50, "레벨 에디터");
+        exitButton = createCenteredButton(570, 200, 50, "게임 종료");
         
         restartButton = createCenteredButton(340, 200, 50, "다시 시작");
         victoryLevelButton = createCenteredButton(400, 200, 50, "레벨 선택"); 
@@ -243,7 +234,7 @@ public class GamePanel extends JPanel implements Runnable {
         mapGenerator = new MapGenerator();
         scoreManager.load();
     }
-    
+
     public void applyCustomColors() {
         Color targetBrickColor = colorList[brickColorIndex];
         for (Brick b : mapGenerator.bricks) {
@@ -298,7 +289,50 @@ public class GamePanel extends JPanel implements Runnable {
         comboCount = 0; 
         try { Thread.sleep(500); } catch (Exception e) {}
     }
-    
+
+    // 파워업 타이머 및 배율 적용
+    private void tickPowerTimers() {
+        if (doubleScoreActive) { doubleScoreTimer--; if (doubleScoreTimer <= 0) doubleScoreActive = false; }
+        if (piercingActive) { piercingTimer--; if (piercingTimer <= 0) piercingActive = false; }
+        if (slowBallActive) { slowBallTimer--; if (slowBallTimer <= 0) disableSlowBall(); }
+    }
+
+    private void addScoreWithMultiplier(int amount) {
+        score += doubleScoreActive ? amount * 2 : amount;
+    }
+
+    // 파워업 활성화 로직
+    public void activateDoubleScore() { doubleScoreActive = true; doubleScoreTimer = DOUBLE_SCORE_DURATION; }
+    public void activatePiercingBall() { piercingActive = true; piercingTimer = PIERCE_DURATION; }
+    public void activateSlowBall() {
+        if (ball != null && !slowBallActive) {
+            ball.getVelocity().x *= SLOW_FACTOR;
+            ball.getVelocity().y *= SLOW_FACTOR;
+        }
+        slowBallActive = true;
+        slowBallTimer = SLOW_DURATION;
+    }
+    private void disableSlowBall() {
+        if (ball != null && slowBallActive) {
+            ball.getVelocity().x /= SLOW_FACTOR;
+            ball.getVelocity().y /= SLOW_FACTOR;
+        }
+        slowBallActive = false;
+        slowBallTimer = 0;
+    }
+    private void reapplySlowIfNeeded() {
+        if (slowBallActive && ball != null) {
+            ball.getVelocity().x *= SLOW_FACTOR;
+            ball.getVelocity().y *= SLOW_FACTOR;
+        }
+    }
+    private void clearPowerStates() {
+        doubleScoreActive = false; doubleScoreTimer = 0;
+        piercingActive = false; piercingTimer = 0;
+        if (slowBallActive) disableSlowBall();
+        else slowBallTimer = 0;
+    }
+
     public void addLife() { lives++; }
     public void expandPaddle() { paddle.expand(); }
     public void startShake(int duration) { this.shakeTimer = duration; }
@@ -328,115 +362,16 @@ public class GamePanel extends JPanel implements Runnable {
     public void addLifeFromShop() { lives++; }
     public void applyPierceFromShop() { activatePiercingBall(); }
     public void applyDoubleScoreFromShop() { activateDoubleScore(); }
-    public MouseHandler getMouseHandler() { return mouseHandler; }
 
-    public SoundManager getSoundManager() {
-        return soundManager;
-    }
-    
     public String applyLuckyDrawFromShop() {
-        LuckyPrize prize = rollLuckyPrize();
-        switch (prize) {
-            case EXTRA_LIFE:
-                addLife();
-                return "행운! 체력 +1";
-            case WIDE_PADDLE:
-                paddle.expand();
-                return "패들 확장!";
-            case SLOW_BALL:
-                activateSlowBall();
-                return "볼 슬로우 10초";
-            case PIERCING_BALL:
-                activatePiercingBall();
-                return "관통 볼 10초";
-            case DOUBLE_SCORE:
-                activateDoubleScore();
-                return "더블 스코어 15초";
-            default:
-                return "행운 실패..?";
-        }
+        int roll = rng.nextInt(100);
+        if (roll < 20) { addLife(); return "행운! 체력 +1"; }
+        if (roll < 40) { expandPaddle(); return "패들 확장!"; }
+        if (roll < 60) { activateSlowBall(); return "볼 슬로우 10초"; }
+        if (roll < 80) { activatePiercingBall(); return "관통 볼 10초"; }
+        activateDoubleScore(); return "더블 스코어 15초";
     }
 
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
-    private LuckyPrize rollLuckyPrize() {
-        int roll = rng.nextInt(100);
-        if (roll < 20) return LuckyPrize.EXTRA_LIFE;
-        if (roll < 40) return LuckyPrize.WIDE_PADDLE;
-        if (roll < 60) return LuckyPrize.SLOW_BALL;
-        if (roll < 80) return LuckyPrize.PIERCING_BALL;
-        return LuckyPrize.DOUBLE_SCORE;
-    }
-    
-    private void activateDoubleScore() {
-        doubleScoreActive = true;
-        doubleScoreTimer = DOUBLE_SCORE_DURATION;
-    }
-    
-    private void activatePiercingBall() {
-        piercingActive = true;
-        piercingTimer = PIERCE_DURATION;
-    }
-    
-    private void activateSlowBall() {
-        if (ball != null && !slowBallActive) {
-            ball.getVelocity().x *= SLOW_FACTOR;
-            ball.getVelocity().y *= SLOW_FACTOR;
-        }
-        slowBallActive = true;
-        slowBallTimer = SLOW_DURATION;
-    }
-    
-    private void disableSlowBall() {
-        if (ball != null) {
-            ball.getVelocity().x /= SLOW_FACTOR;
-            ball.getVelocity().y /= SLOW_FACTOR;
-        }
-        slowBallActive = false;
-        slowBallTimer = 0;
-    }
-    
-    private void reapplySlowIfNeeded() {
-        if (slowBallActive && ball != null) {
-            ball.getVelocity().x *= SLOW_FACTOR;
-            ball.getVelocity().y *= SLOW_FACTOR;
-        }
-    }
-    
-    private void clearPowerStates() {
-        doubleScoreActive = false;
-        doubleScoreTimer = 0;
-        piercingActive = false;
-        piercingTimer = 0;
-        if (slowBallActive) {
-            disableSlowBall();
-        } else {
-            slowBallTimer = 0;
-        }
-    }
-    
-    private void tickPowerTimers() {
-        if (doubleScoreActive) {
-            doubleScoreTimer--;
-            if (doubleScoreTimer <= 0) doubleScoreActive = false;
-        }
-        if (piercingActive) {
-            piercingTimer--;
-            if (piercingTimer <= 0) piercingActive = false;
-        }
-        if (slowBallActive) {
-            slowBallTimer--;
-            if (slowBallTimer <= 0) disableSlowBall();
-        }
-    }
-    
-    private void addScoreWithMultiplier(int amount) {
-        score += doubleScoreActive ? amount * 2 : amount;
-=======
-<<<<<<< HEAD
-    // 페이드 전환
->>>>>>> caa30f4079cab9fc3c3a5d6c8e8822aabce4a219
     public void transitionTo(int nextState) {
         if (isFading) return;
         this.nextGameState = nextState;
@@ -448,17 +383,11 @@ public class GamePanel extends JPanel implements Runnable {
     public boolean isCRTFilterOn() { return isCRTFilterOn; }
     public void toggleCRTFilter() { isCRTFilterOn = !isCRTFilterOn; }
 
-<<<<<<< HEAD
     public SoundManager getSoundManager() { return soundManager; }
 
-=======
-=======
-    public SoundManager getSoundManager() {
-    return soundManager;
->>>>>>> 49880c1f915c895f519260ec2f33ea8493d0870d
-    }
->>>>>>> 9691d1e8da6bfdfc2e2a9fdde74887205ddc5ca0
->>>>>>> caa30f4079cab9fc3c3a5d6c8e8822aabce4a219
+    public MouseHandler getMouseHandler() { 
+        return mouseHandler; 
+}
     @Override
     public void run() {
         double drawInterval = 1000000000 / FPS;
@@ -539,12 +468,8 @@ public class GamePanel extends JPanel implements Runnable {
     }
     
     private void updateMenu() {
-        startButton.update(mouseHandler); 
-        settingsButton.update(mouseHandler); 
-        leaderboardButton.update(mouseHandler);
-        exitButton.update(mouseHandler); 
-        editorButton.update(mouseHandler);
-        achievementButton.update(mouseHandler);
+        startButton.update(mouseHandler); settingsButton.update(mouseHandler); leaderboardButton.update(mouseHandler);
+        exitButton.update(mouseHandler); editorButton.update(mouseHandler); achievementButton.update(mouseHandler);
         
         if (startButton.isClicked(mouseHandler)) transitionTo(STATE_LEVEL_SELECT); 
         if (settingsButton.isClicked(mouseHandler)) { previousState = STATE_MENU; transitionTo(STATE_SETTINGS); }
@@ -582,16 +507,16 @@ public class GamePanel extends JPanel implements Runnable {
         }
         
         for (Brick brick : mapGenerator.bricks) {
-<<<<<<< HEAD
             if (!brick.isDestroyed && ball.getBounds().intersects(brick.getBounds())) {
-                CollisionDetector.resolveBallVsRect(ball, brick);
+                if (!piercingActive) CollisionDetector.resolveBallVsRect(ball, brick); // 관통 시 튕기기 스킵
                 brick.hit();
                 
                 comboCount++;
                 comboScale = 2.0f + (comboCount * 0.1f); 
                 if (comboScale > 3.0f) comboScale = 3.0f;
                 
-                score += (brick.scoreValue + (comboCount > 1 ? comboCount * 10 : 0));
+                int bonus = (comboCount > 1) ? (comboCount * 10) : 0;
+                addScoreWithMultiplier(brick.scoreValue + bonus); // 배율 적용
                 
                 achievementManager.unlock("첫 걸음");
                 if (score >= 10000) achievementManager.unlock("고득점자");
@@ -605,63 +530,25 @@ public class GamePanel extends JPanel implements Runnable {
                 } else {
                     soundManager.playHitSound();
                     startShake(5);
-=======
-            if (!brick.isDestroyed) {
-                if (ball.getBounds().intersects(brick.getBounds())) {
-                    if (!piercingActive) {
-                        CollisionDetector.resolveBallVsRect(ball, brick);
-                    }
-                    brick.hit();
-                    
-                    comboCount++;
-                    comboScale = 2.0f + (comboCount * 0.1f); 
-                    if (comboScale > 3.0f) comboScale = 3.0f;
-                    
-                    int bonus = (comboCount > 1) ? (comboCount * 10) : 0;
-                    addScoreWithMultiplier(brick.scoreValue + bonus);
-                    
-                    achievementManager.unlock("?????????");
-
-                    if (score >= 10000){
-                        achievementManager.unlock("???????????");
-                    }
-
-                    if (brick.isDestroyed) {
-                        soundManager.playExplodeSound();
-                        if (brick instanceof breakout.entity.ExplosiveBrick) triggerExplosion(brick);
-                        effectManager.createExplosion(brick.getPosition().x+40, brick.getPosition().y+15, brick.color);
-                        powerUpManager.maybeSpawn(brick.getPosition().x+40, brick.getPosition().y+15);
-                        startShake(15 + Math.min(comboCount, 10)); 
-                    } else {
-                        soundManager.playHitSound();
-                        startShake(5);
-                    }
-                    if (!piercingActive) {
-                        break; 
-                    }
->>>>>>> caa30f4079cab9fc3c3a5d6c8e8822aabce4a219
                 }
-                break; 
+                if (!piercingActive) break; 
             }
         }
-
+        
         if (ball.getPosition().y > HEIGHT) {
             lives--;
             startShake(20);
             soundManager.playFailSound();
             if (lives > 0) resetRound(); 
-            else {
-                gameState = STATE_GAME_OVER;
-                promptAndAddScore(score);
-            }
+            else { gameState = STATE_GAME_OVER; promptAndAddScore(score); }
         }
 
         if (mapGenerator.bricks.stream().noneMatch(b -> !b.isDestroyed)) {
             if (lives == 3) achievementManager.unlock("생존 전문가");
             gameState = STATE_VICTORY;
             promptAndAddScore(score);
-            soundManager.stopBGM();
-            soundManager.playVictorySound();
+            soundManager.stopBGM(); // 브금 정지
+            soundManager.playVictorySound(); // 짧은 승리 효과음 1회 재생
         }
     }
     
@@ -679,6 +566,7 @@ public class GamePanel extends JPanel implements Runnable {
         restartButton.update(mouseHandler);
         menuButton.update(mouseHandler);
         
+        // 승리 화면 혹은 결과 화면 탈출 시 브금 복구
         if (gameState == STATE_VICTORY) {
             victoryLevelButton.update(mouseHandler); 
             if (victoryLevelButton.isClicked(mouseHandler)) {
@@ -687,42 +575,30 @@ public class GamePanel extends JPanel implements Runnable {
             }
         }
         
-        if (restartButton.isClicked(mouseHandler)) { 
-            soundManager.playBGM("Bgm.wav");
-            startGameWithLevel(currentLevel); 
-        }
-        if (menuButton.isClicked(mouseHandler)) { 
-            soundManager.playBGM("Bgm.wav");
-            transitionTo(STATE_MENU); 
-        }
+        if (restartButton.isClicked(mouseHandler)) { soundManager.playBGM("Bgm.wav"); startGameWithLevel(currentLevel); }
+        if (menuButton.isClicked(mouseHandler)) { soundManager.playBGM("Bgm.wav"); transitionTo(STATE_MENU); }
     }
     
-    // Settings accessors (used by SettingsPanel)
+    // ... Settings accessors 및 paintComponent 로직 동일 ...
+
     public boolean isSoundOn() { return isSoundOn; }
     public void toggleSound() { isSoundOn = !isSoundOn; soundManager.setMute(!isSoundOn); }
     public void prevBackground() { currentBgIndex = (currentBgIndex-1+6)%6; changeBackgroundBGM(); }
     public void nextBackground() { currentBgIndex = (currentBgIndex+1)%6; changeBackgroundBGM(); }
-
     public void cycleBallColor() { ballColorIndex = (ballColorIndex+1)%colorList.length; }
     public String getBallColorName() { return colorNames[ballColorIndex]; }
-
     public void cycleBallSkin() { currentSkinIndex++; if (currentSkinIndex >= 4) currentSkinIndex = -1; applyBallSkin(); }
     public String getBallSkinName() { return (currentSkinIndex == -1) ? "없음" : "학생회 " + (currentSkinIndex + 1); }
-
     public void cyclePaddleColor() { paddleColorIndex = (paddleColorIndex + 1) % colorList.length; if (paddle != null) paddle.setColor(colorList[paddleColorIndex]); }
     public String getPaddleColorName() { return colorNames[paddleColorIndex]; }
-
     public void cyclePaddleShape() { paddleShapeIndex = (paddleShapeIndex + 1) % 4; if (paddle != null) paddle.setShapeType(paddleShapeIndex); }
     public String getPaddleShapeName() { return shapeNames[paddleShapeIndex]; }
-
     public void cycleBrickColor() { brickColorIndex = (brickColorIndex+1)%colorList.length; applyCustomColors(); }
     public String getBrickColorName() { return colorNames[brickColorIndex]; }
-
     public Paddle getPaddle() { return paddle; }
+    public Color getCurrentBallColor() { return colorList[ballColorIndex]; }
     
-    private void changeBackgroundBGM() {
-        if (isSoundOn) soundManager.playBGM("Bgm.wav");
-    }
+    private void changeBackgroundBGM() { if (isSoundOn) soundManager.playBGM("Bgm.wav"); }
     
     @Override
     public void paintComponent(Graphics g) {
@@ -757,14 +633,11 @@ public class GamePanel extends JPanel implements Runnable {
         }
         
         if (sx != 0 || sy != 0) dbg.translate(-sx, -sy);
-        
         if (isFading && fadeAlpha > 0.01f) {
             dbg.setColor(new Color(0, 0, 0, Math.max(0.0f, Math.min(1.0f, fadeAlpha)))); 
             dbg.fillRect(0, 0, WIDTH, HEIGHT);
         }
-
         if (isCRTFilterOn) drawCRTFilter(dbg);
-
         if (gameState == STATE_MENU) Toolkit.getDefaultToolkit().sync(); 
     }
 
@@ -783,44 +656,28 @@ public class GamePanel extends JPanel implements Runnable {
     private void drawCRTFilter(Graphics2D dbg) {
         dbg.setColor(new Color(0, 0, 0, 50)); 
         for (int y = 0; y < HEIGHT; y += 4) dbg.fillRect(0, y, WIDTH, 2);
-        
         java.awt.RadialGradientPaint p = new java.awt.RadialGradientPaint(
             new java.awt.geom.Point2D.Float(WIDTH / 2, HEIGHT / 2), WIDTH, 
             new float[]{0.0f, 0.5f, 1.0f}, 
             new Color[]{new Color(0,0,0,0), new Color(0,0,0,0), new Color(0,0,0,150)});
-        dbg.setPaint(p);
-        dbg.fillRect(0, 0, WIDTH, HEIGHT);
+        dbg.setPaint(p); dbg.fillRect(0, 0, WIDTH, HEIGHT);
     }
 
-    private void drawCentered3DText(Graphics2D g2, String text, int y, Color mainColor, Color shadowColor, float size) {
-        if (customFont != null) g2.setFont(customFont.deriveFont(Font.BOLD, size));
-        else g2.setFont(new Font("SansSerif", Font.BOLD, (int)size));
-        FontMetrics fm = g2.getFontMetrics();
-        int x = (WIDTH - fm.stringWidth(text)) / 2;
-        g2.setColor(shadowColor);
-        for(int i = 5; i > 0; i--) g2.drawString(text, x + i, y + i);
-        g2.setColor(mainColor);
-        g2.drawString(text, x, y);
-    }
-    
     private void drawMenu(Graphics2D g2) {
         if (menuGifImage != null) g2.drawImage(menuGifImage, 0, 0, WIDTH, HEIGHT, this);
         else { g2.setColor(Color.BLACK); g2.fillRect(0, 0, WIDTH, HEIGHT); }
         drawCentered3DText(g2, "샤갈적인 벽돌깨기", 150, Color.YELLOW, Color.DARK_GRAY, 70f);
         drawCentered3DText(g2, "⚜️태풍을 부르는 학생회의 반란⚜️", 210, Color.WHITE, Color.BLACK, 30f);
-        g2.setColor(Color.CYAN);
-        g2.setFont(new Font("Consolas", Font.BOLD, 20));
+        g2.setColor(Color.CYAN); g2.setFont(new Font("Consolas", Font.BOLD, 20));
         drawCenteredString(g2, "HIGH SCORE: " + scoreManager.getHighScore(), WIDTH/2, 550);
         startButton.draw(g2, customFont); settingsButton.draw(g2, customFont); 
         leaderboardButton.draw(g2, customFont); editorButton.draw(g2, customFont); 
         achievementButton.draw(g2, customFont); exitButton.draw(g2, customFont);
     }
-    
+
     private void drawHUD(Graphics2D g2) {
-        g2.setColor(new Color(0, 0, 0, 100));
-        g2.fillRect(0, 0, WIDTH, 40);
-        g2.setColor(Color.WHITE);
-        g2.setFont(new Font("Consolas", Font.BOLD, 24));
+        g2.setColor(new Color(0, 0, 0, 100)); g2.fillRect(0, 0, WIDTH, 40);
+        g2.setColor(Color.WHITE); g2.setFont(new Font("Consolas", Font.BOLD, 24));
         g2.drawString("SCORE: " + score, 20, 28);
         g2.drawString("LIVES:", WIDTH - 200, 28); 
         for (int i = 0; i < Math.min(lives, 3); i++) drawHeart(g2, WIDTH - 120 + (i * 30), 10);
@@ -828,66 +685,28 @@ public class GamePanel extends JPanel implements Runnable {
             g2.setColor(Color.yellow); g2.setFont(new Font("Consolas", Font.BOLD, 20));
             g2.drawString("+" + (lives-3), WIDTH - 25, 28);
         }
+        drawActiveBuffs(g2);
         if (comboCount >= 2) drawCombo(g2);
     }
 
-<<<<<<< HEAD
+    // 그림자 3D 효과와 지터 효과가 포함된 콤보 표시
     private void drawCombo(Graphics2D g2) {
-        g2.setFont(new Font("Consolas", Font.BOLD, (int)(40 * comboScale)));
+        int fontSize = (int)(40 * comboScale); 
+        g2.setFont(new Font("Consolas", Font.BOLD, fontSize));
         Color[] flash = { Color.RED, Color.ORANGE, Color.YELLOW, Color.WHITE, Color.MAGENTA, Color.CYAN };
-        g2.setColor(flash[(int)((System.currentTimeMillis() / 50) % flash.length)]);
+        Color mainColor = flash[(int)((System.currentTimeMillis() / 50) % flash.length)];
         String text = comboCount + " COMBO!";
-        int x = WIDTH/2 - g2.getFontMetrics().stringWidth(text)/2 + (comboScale > 1.2f ? (int)(Math.random()*10-5) : 0);
-        int y = 80 + (comboScale > 1.2f ? (int)(Math.random()*10-5) : 0);
-        g2.drawString(text, x, y);
-=======
-        if (extraLives > 0) {
-            g2.setColor(Color.yellow);
-            g2.setFont(new Font("Consolas", Font.BOLD, 20));
-            g2.drawString("+" + extraLives, WIDTH - 25, 28);
-        }
-        
-        drawActiveBuffs(g2);
-        
-        if (comboCount >= 2) {
-            int fontSize = (int)(40 * comboScale); 
-            g2.setFont(new Font("Consolas", Font.BOLD, fontSize));
-            
-            long time = System.currentTimeMillis();
-            Color[] flashingColors = { Color.RED, Color.ORANGE, Color.YELLOW, Color.WHITE, Color.MAGENTA, Color.CYAN };
-            int colorIndex = (int)((time / 50) % flashingColors.length); 
-            Color mainColor = flashingColors[colorIndex];
-            
-            String comboText = comboCount + " COMBO!";
-            FontMetrics fm = g2.getFontMetrics();
-            int tw = fm.stringWidth(comboText);
-            
-            int jitterX = 0, jitterY = 0;
-            if (comboScale > 1.2f) { 
-                jitterX = (int)(Math.random() * 10 - 5);
-                jitterY = (int)(Math.random() * 10 - 5);
-            }
-            
-            int drawX = WIDTH/2 - tw/2 + jitterX;
-            int drawY = 80 + jitterY;
+        int tw = g2.getFontMetrics().stringWidth(text);
+        int jitterX = (comboScale > 1.2f) ? (int)(Math.random()*10-5) : 0;
+        int jitterY = (comboScale > 1.2f) ? (int)(Math.random()*10-5) : 0;
+        int drawX = WIDTH/2 - tw/2 + jitterX;
+        int drawY = 80 + jitterY;
 
-            g2.setColor(Color.DARK_GRAY);
-            for (int i = 1; i <= 8; i++) {
-                g2.drawString(comboText, drawX + i, drawY + i);
-            }
-            g2.setColor(mainColor);
-            g2.drawString(comboText, drawX, drawY);
-        }
->>>>>>> caa30f4079cab9fc3c3a5d6c8e8822aabce4a219
+        g2.setColor(Color.DARK_GRAY);
+        for (int i = 1; i <= 8; i++) g2.drawString(text, drawX + i, drawY + i); // 3D 그림자
+        g2.setColor(mainColor);
+        g2.drawString(text, drawX, drawY);
     }
-    
-    private void drawHeart(Graphics2D g2, int x, int y) {
-        g2.setColor(Color.RED); g2.fillOval(x, y, 10, 10); g2.fillOval(x + 10, y, 10, 10); 
-        int[] xp = {x, x + 10, x + 20}; int[] yp = {y + 5, y + 20, y + 5}; g2.fillPolygon(xp, yp, 3);
-    }
-<<<<<<< HEAD
-
-=======
     
     private void drawActiveBuffs(Graphics2D g2) {
         ArrayList<String> status = new ArrayList<>();
@@ -898,23 +717,18 @@ public class GamePanel extends JPanel implements Runnable {
         
         String text = String.join("  |  ", status);
         g2.setFont(new Font("Consolas", Font.BOLD, 16));
-        FontMetrics fm = g2.getFontMetrics();
-        int boxW = fm.stringWidth(text) + 20;
-        int boxH = 22;
-        int x = 10;
-        int y = 45;
-        
         g2.setColor(new Color(0, 0, 0, 120));
-        g2.fillRoundRect(x, y - boxH + 6, boxW, boxH, 8, 8);
-        g2.setColor(Color.WHITE);
-        g2.drawString(text, x + 10, y - 6);
+        g2.fillRoundRect(10, 45 - 16, g2.getFontMetrics().stringWidth(text) + 20, 22, 8, 8);
+        g2.setColor(Color.WHITE); g2.drawString(text, 20, 45 - 6);
     }
     
-    private String formatTimer(int ticks) {
-        int sec = (int)Math.ceil(ticks / (double)FPS);
-        return sec + "s";
+    private String formatTimer(int ticks) { return (int)Math.ceil(ticks / (double)FPS) + "s"; }
+
+    private void drawHeart(Graphics2D g2, int x, int y) {
+        g2.setColor(Color.RED); g2.fillOval(x, y, 10, 10); g2.fillOval(x + 10, y, 10, 10); 
+        int[] xp = {x, x + 10, x + 20}; int[] yp = {y + 5, y + 20, y + 5}; g2.fillPolygon(xp, yp, 3);
     }
->>>>>>> caa30f4079cab9fc3c3a5d6c8e8822aabce4a219
+
     private void drawAchievements(Graphics2D g2) {
         g2.setColor(new Color(0, 0, 0, 200)); g2.fillRect(0, 0, WIDTH, HEIGHT);
         g2.setColor(Color.YELLOW); g2.setFont(new Font("Consolas", Font.BOLD, 40));
@@ -943,35 +757,28 @@ public class GamePanel extends JPanel implements Runnable {
         menuButton.draw(g2, customFont);
     }
     
-    public void drawCenteredString(Graphics2D g, String text, int x, int y) {
-        int tw = g.getFontMetrics().stringWidth(text); g.drawString(text, x - tw / 2, y);
-    }
-    
     private void triggerExplosion(Brick centerBrick) {
         Rectangle area = new Rectangle((int)(centerBrick.getPosition().x - centerBrick.getWidth()), (int)(centerBrick.getPosition().y - centerBrick.getHeight()), (int)centerBrick.getWidth()*3, (int)centerBrick.getHeight()*3);
         for (Brick b : mapGenerator.bricks) {
             if (!b.isDestroyed && b != centerBrick && area.intersects(b.getBounds())) {
                 b.hit(); 
                 if (b.isDestroyed) {
-                    addScoreWithMultiplier(b.scoreValue);
+                    addScoreWithMultiplier(b.scoreValue); // 배율 적용 수정
                     effectManager.createExplosion(b.getPosition().x+40, b.getPosition().y+15, b.color);
                 }
             }
         }
         startShake(20); 
     }
-<<<<<<< HEAD
-}
-=======
+
+    private void drawCentered3DText(Graphics2D g2, String text, int y, Color mainColor, Color shadowColor, float size) {
+        g2.setFont((customFont != null) ? customFont.deriveFont(Font.BOLD, size) : new Font("SansSerif", Font.BOLD, (int)size));
+        int x = (WIDTH - g2.getFontMetrics().stringWidth(text)) / 2;
+        g2.setColor(shadowColor); for(int i = 5; i > 0; i--) g2.drawString(text, x + i, y + i);
+        g2.setColor(mainColor); g2.drawString(text, x, y);
+    }
     
-<<<<<<< HEAD
-    public Color getCurrentBallColor() { return colorList[ballColorIndex]; }
-}
-=======
-    // ★ [추가] 현재 선택된 공 색상을 반환하는 메서드
-    public Color getCurrentBallColor() {
-        return colorList[ballColorIndex];
+    public void drawCenteredString(Graphics2D g, String text, int x, int y) {
+        int tw = g.getFontMetrics().stringWidth(text); g.drawString(text, x - tw / 2, y);
     }
 }
->>>>>>> 49880c1f915c895f519260ec2f33ea8493d0870d
->>>>>>> caa30f4079cab9fc3c3a5d6c8e8822aabce4a219

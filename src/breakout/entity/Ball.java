@@ -46,10 +46,10 @@ public class Ball extends GameObject {
 
     @Override
     public void draw(Graphics2D g) {
-    int x = (int)position.x;
-        int y = (int)position.y;
-        int w = (int)width;
-        int h = (int)height;
+   // int x = (int)position.x;
+       // int y = (int)position.y;
+       // int w = (int)width;
+        //int h = (int)height;
 
 
          // 1. 잔상 그리기
