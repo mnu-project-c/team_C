@@ -3,50 +3,61 @@ package breakout.entity;
 import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.geom.AffineTransform;
 
 public class Particle extends GameObject {
 
     private double velX, velY;
-    private float alpha = 1.0f; // 투명도 (1.0: 불투명 -> 0.0: 투명)
-    private float life = 0.03f; // 수명 감소 속도
+    private float alpha = 1.0f;
+    private float life = 0.02f;
     private Color color;
+    
+    private double gravity = 0.4;
+    private double rotation = 0;
+    private double rotSpeed;
 
     public Particle(double x, double y, Color color) {
-        super(x, y, 6, 6); // 6x6 크기의 작은 조각
+        super(x, y, 8, 8);
         this.color = color;
         
-        // 사방으로 퍼지는 랜덤 속도
-        this.velX = (Math.random() * 6) - 3; // -3 ~ 3
-        this.velY = (Math.random() * 6) - 3; 
+        this.velX = (Math.random() * 10) - 5;
+        this.velY = (Math.random() * 10) - 8;
+        
+        this.rotSpeed = (Math.random() * 0.4) - 0.2;
     }
 
     @Override
     public void update() {
+        velY += gravity;
+        
         position.x += velX;
         position.y += velY;
         
-        // 시간이 지날수록 투명해짐
+        rotation += rotSpeed;
         alpha -= life;
     }
 
     @Override
     public void draw(Graphics2D g) {
         if (alpha > 0) {
-            // 투명도 적용을 위한 합성 모드 설정
+            AffineTransform oldTransform = g.getTransform();
+            
             g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
+            
+            g.translate(position.x + width/2, position.y + height/2);
+            g.rotate(rotation);
+            g.translate(-(position.x + width/2), -(position.y + height/2));
+            
             g.setColor(color);
             g.fillRect((int)position.x, (int)position.y, (int)width, (int)height);
             
-            // 다시 원래대로 복구 (필수!)
+            g.setTransform(oldTransform);
             g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
         }
     }
 
-    public boolean isDead() {
-        return alpha <= 0;
-    }
-
-    // 파티클은 충돌 처리 안 함
+    public boolean isDead() { return alpha <= 0; }
+    
     @Override
     public void onCollision(Collidable other) {}
 }

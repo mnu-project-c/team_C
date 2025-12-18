@@ -1,38 +1,47 @@
-  package breakout.manager;
+package breakout.manager;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
+import breakout.entity.FloatingText;
 import breakout.entity.Particle;
 
 public class EffectManager {
     
-    private ArrayList<Particle> particles = new ArrayList<>();
+    private List<Particle> particles = new ArrayList<>();
+    private List<FloatingText> texts = new ArrayList<>();
 
-    // 벽돌이 깨질 때 호출할 메소드
     public void createExplosion(double x, double y, Color color) {
-        // 파편 15개 생성
-        for (int i = 0; i < 15; i++) {
+        for (int i = 0; i < 20; i++) {
             particles.add(new Particle(x, y, color));
         }
     }
+    
+    public void addFloatingText(double x, double y, String msg, Color color) {
+        texts.add(new FloatingText(x, y, msg, color));
+    }
 
     public void update() {
-        Iterator<Particle> it = particles.iterator();
-        while (it.hasNext()) {
-            Particle p = it.next();
+        Iterator<Particle> pIt = particles.iterator();
+        while (pIt.hasNext()) {
+            Particle p = pIt.next();
             p.update();
-            if (p.isDead()) {
-                it.remove(); // 수명이 다한 파티클 제거 (메모리 관리)
-            }
+            if (p.isDead()) pIt.remove();
+        }
+        
+        Iterator<FloatingText> tIt = texts.iterator();
+        while (tIt.hasNext()) {
+            FloatingText t = tIt.next();
+            t.update();
+            if (t.isDead()) tIt.remove();
         }
     }
 
     public void draw(Graphics2D g) {
-        for (Particle p : particles) {
-            p.draw(g);
-        }
+        for (Particle p : particles) p.draw(g);
+        for (FloatingText t : texts) t.draw(g);
     }
 }
