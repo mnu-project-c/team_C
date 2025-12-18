@@ -2,132 +2,189 @@ package breakout.view;
 
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 
+import breakout.entity.Paddle;
 import breakout.manager.MouseHandler;
 
 public class SettingsPanel {
-    private GamePanel panel;
+    
+    private GamePanel gamePanel;
+    private GameButton backButton;
+    
+    
+    private GameButton soundButton;
+    private GameButton bgPrevButton, bgNextButton;
+    private GameButton ballColorButton;
+    private GameButton ballSkinButton;
+    private GameButton paddleColorButton;
+    private GameButton paddleShapeButton;
+    private GameButton brickColorButton;
+    
+    
+    private GameButton crtFilterButton;
 
-    private GameButton soundButton, prevBgButton, nextBgButton;
-    private GameButton ballColorButton, ballSkinButton;
-    private GameButton paddleColorButton, paddleShapeButton;
-    private GameButton brickColorButton, backButton;
+    
+    private int brickY;       
+    private int previewY;     
+    private int previewTextY; 
 
-    public SettingsPanel(GamePanel panel) {
-        this.panel = panel;
-        initButtons();
+    public SettingsPanel(GamePanel gamePanel) {
+        this.gamePanel = gamePanel;
+        initUI();
     }
-
-    private void initButtons() {
-        int centerX = GamePanel.WIDTH/2 - 100;
-        int setY = 130;
-        int setGap = 50;
-        soundButton = new GameButton(centerX, setY, 200, 40, "소리: " + (panel.isSoundOn() ? "켜짐" : "꺼짐"));
-        prevBgButton = new GameButton(centerX - 110, setY + setGap, 100, 40, "<< 배경");
-        nextBgButton = new GameButton(centerX + 210, setY + setGap, 100, 40, "배경 >>");
-        ballColorButton = new GameButton(centerX, setY + setGap*2, 200, 40, "공 색상: " + panel.getBallColorName());
-        ballSkinButton = new GameButton(centerX, setY + setGap*3, 200, 40, "공 스킨: " + panel.getBallSkinName());
-        paddleColorButton = new GameButton(centerX - 110, setY + setGap*4, 200, 40, "판 색상: " + panel.getPaddleColorName());
-        paddleShapeButton = new GameButton(centerX + 110, setY + setGap*4, 200, 40, "판 모양: " + panel.getPaddleShapeName());
-        brickColorButton = new GameButton(centerX, setY + setGap*5, 200, 40, "벽돌: " + panel.getBrickColorName());
-        backButton = new GameButton(centerX, 500, 200, 50, "뒤로가기");
+    
+    private void initUI() {
+        int centerX = GamePanel.WIDTH / 2;
+        
+        int halfBtnWidth = 180;
+        int fullBtnWidth = 240;
+        int height = 40;
+        int gap = 20;
+        
+        
+        int startY = 100; 
+        int rowStep = 55;
+        
+        
+        int bgY = startY;
+        bgPrevButton = new GameButton(centerX - 120, bgY, 60, height, "◀");
+        bgNextButton = new GameButton(centerX + 60, bgY, 60, height, "▶");
+        
+        
+        int soundFilterY = bgY + rowStep;
+        soundButton = new GameButton(centerX - gap/2 - halfBtnWidth, soundFilterY, halfBtnWidth, height, "소리: ON");
+        crtFilterButton = new GameButton(centerX + gap/2, soundFilterY, halfBtnWidth, height, "CRT 필터: OFF");
+        
+        
+        int ballY = soundFilterY + rowStep;
+        ballColorButton = new GameButton(centerX - gap/2 - halfBtnWidth, ballY, halfBtnWidth, height, "공 색상: 빨강");
+        ballSkinButton = new GameButton(centerX + gap/2, ballY, halfBtnWidth, height, "공 스킨: 없음");
+        
+        
+        int paddleY = ballY + rowStep;
+        paddleColorButton = new GameButton(centerX - gap/2 - halfBtnWidth, paddleY, halfBtnWidth, height, "패들 색상: 하늘");
+        paddleShapeButton = new GameButton(centerX + gap/2, paddleY, halfBtnWidth, height, "패들 모양: 기본");
+        
+        
+        this.previewTextY = paddleY + 90; // 약 355
+        
+        
+        this.previewY = previewTextY + 70; // 약 425
+        
+        
+        this.brickY = previewY + 50; // 약 475
+        brickColorButton = new GameButton(centerX - fullBtnWidth/2, brickY, fullBtnWidth, height, "벽돌 색상: 노랑");
+        
+        
+        backButton = new GameButton(centerX - 100, 550, 200, 40, "뒤로 가기");
     }
-
-    /**
-     * Update returns true when back button is clicked (request to close settings)
-     */
-    public boolean update(MouseHandler mouseHandler) {
-        soundButton.update(mouseHandler);
-        prevBgButton.update(mouseHandler);
-        nextBgButton.update(mouseHandler);
-        ballColorButton.update(mouseHandler);
-        ballSkinButton.update(mouseHandler);
-        paddleColorButton.update(mouseHandler);
-        paddleShapeButton.update(mouseHandler);
-        brickColorButton.update(mouseHandler);
-        backButton.update(mouseHandler);
-
-        if (soundButton.isClicked(mouseHandler)) {
-            panel.toggleSound();
-            soundButton = new GameButton(soundButton.bounds.x, soundButton.bounds.y, soundButton.bounds.width, soundButton.bounds.height,
-                    "소리: " + (panel.isSoundOn() ? "켜짐" : "꺼짐"));
-        }
-        if (prevBgButton.isClicked(mouseHandler)) { panel.prevBackground(); }
-        if (nextBgButton.isClicked(mouseHandler)) { panel.nextBackground(); }
-
-        if (ballColorButton.isClicked(mouseHandler)) {
-            panel.cycleBallColor();
-            ballColorButton = new GameButton(ballColorButton.bounds.x, ballColorButton.bounds.y, ballColorButton.bounds.width, ballColorButton.bounds.height,
-                    "공 색상: " + panel.getBallColorName());
-        }
-
-        if (ballSkinButton.isClicked(mouseHandler)) {
-            panel.cycleBallSkin();
-            ballSkinButton = new GameButton(ballSkinButton.bounds.x, ballSkinButton.bounds.y, ballSkinButton.bounds.width, ballSkinButton.bounds.height,
-                    "공 스킨: " + panel.getBallSkinName());
-        }
-
-        if (paddleColorButton.isClicked(mouseHandler)) {
-            panel.cyclePaddleColor();
-            paddleColorButton = new GameButton(paddleColorButton.bounds.x, paddleColorButton.bounds.y, paddleColorButton.bounds.width, paddleColorButton.bounds.height,
-                    "판 색상: " + panel.getPaddleColorName());
-        }
-
-        if (paddleShapeButton.isClicked(mouseHandler)) {
-            panel.cyclePaddleShape();
-            paddleShapeButton = new GameButton(paddleShapeButton.bounds.x, paddleShapeButton.bounds.y, paddleShapeButton.bounds.width, paddleShapeButton.bounds.height,
-                    "판 모양: " + panel.getPaddleShapeName());
-        }
-
-        if (brickColorButton.isClicked(mouseHandler)) {
-            panel.cycleBrickColor();
-            brickColorButton = new GameButton(brickColorButton.bounds.x, brickColorButton.bounds.y, brickColorButton.bounds.width, brickColorButton.bounds.height,
-                    "벽돌: " + panel.getBrickColorName());
-        }
-
-        if (backButton.isClicked(mouseHandler)) {
-            return true;
-        }
+    
+    public boolean update(MouseHandler mouse) {
+        backButton.update(mouse);
+        if (backButton.isClicked(mouse)) return true;
+        
+        bgPrevButton.update(mouse);
+        bgNextButton.update(mouse);
+        if (bgPrevButton.isClicked(mouse)) gamePanel.prevBackground();
+        if (bgNextButton.isClicked(mouse)) gamePanel.nextBackground();
+        
+        soundButton.update(mouse);
+        if (soundButton.isClicked(mouse)) gamePanel.toggleSound();
+        soundButton.setText("소리: " + (gamePanel.isSoundOn() ? "ON" : "OFF"));
+        
+        crtFilterButton.update(mouse);
+        if (crtFilterButton.isClicked(mouse)) gamePanel.toggleCRTFilter();
+        crtFilterButton.setText("CRT 필터: " + (gamePanel.isCRTFilterOn() ? "ON" : "OFF"));
+        
+        ballColorButton.update(mouse);
+        if (ballColorButton.isClicked(mouse)) gamePanel.cycleBallColor();
+        ballColorButton.setText("공 색상: " + gamePanel.getBallColorName());
+        
+        ballSkinButton.update(mouse);
+        if (ballSkinButton.isClicked(mouse)) gamePanel.cycleBallSkin();
+        ballSkinButton.setText("공 스킨: " + gamePanel.getBallSkinName());
+        
+        paddleColorButton.update(mouse);
+        if (paddleColorButton.isClicked(mouse)) gamePanel.cyclePaddleColor();
+        paddleColorButton.setText("패들 색상: " + gamePanel.getPaddleColorName());
+        
+        paddleShapeButton.update(mouse);
+        if (paddleShapeButton.isClicked(mouse)) gamePanel.cyclePaddleShape();
+        paddleShapeButton.setText("패들 모양: " + gamePanel.getPaddleShapeName());
+        
+        brickColorButton.update(mouse);
+        if (brickColorButton.isClicked(mouse)) gamePanel.cycleBrickColor();
+        brickColorButton.setText("벽돌 색상: " + gamePanel.getBrickColorName());
+        
         return false;
     }
-
-    public void draw(Graphics2D g2, Font customFont) {
-        g2.setColor(new Color(0, 0, 0, 180)); g2.fillRect(0, 0, GamePanel.WIDTH, GamePanel.HEIGHT);
-        g2.setColor(Color.WHITE); g2.setFont(new Font("Consolas", Font.BOLD, 40));
-        drawCenteredString(g2, "SETTINGS", GamePanel.WIDTH/2, 100);
-
-        if (customFont != null) g2.setFont(customFont.deriveFont(Font.BOLD, 20f));
-        else g2.setFont(new Font("SansSerif", Font.BOLD, 20));
-
-        soundButton.draw(g2, customFont);
-        prevBgButton.draw(g2, customFont);
-        nextBgButton.draw(g2, customFont);
-        ballColorButton.draw(g2, customFont);
-        ballSkinButton.draw(g2, customFont);
-        paddleColorButton.draw(g2, customFont);
-        paddleShapeButton.draw(g2, customFont);
-        brickColorButton.draw(g2, customFont);
-        backButton.draw(g2, customFont);
-
-        if (panel != null) {
-            // draw preview paddle
-            if (panel.getPaddle() != null) {
-                double oldX = panel.getPaddle().getPosition().x;
-                double oldY = panel.getPaddle().getPosition().y;
-                panel.getPaddle().getPosition().x = GamePanel.WIDTH / 2 - 50;
-                panel.getPaddle().getPosition().y = 450;
-                panel.getPaddle().draw(g2);
-                panel.getPaddle().getPosition().x = oldX;
-                panel.getPaddle().getPosition().y = oldY;
-            }
+    
+    public void draw(Graphics2D g, Font font) {
+        g.setColor(new Color(0, 0, 0, 200));
+        g.fillRect(0, 0, GamePanel.WIDTH, GamePanel.HEIGHT);
+        
+        g.setColor(Color.WHITE);
+        if (font != null) g.setFont(font.deriveFont(Font.BOLD, 40f));
+        int titleWidth = g.getFontMetrics().stringWidth("설정");
+        g.drawString("설정", GamePanel.WIDTH/2 - titleWidth/2, 60);
+        
+        // 배경화면
+        bgPrevButton.draw(g, font);
+        bgNextButton.draw(g, font);
+        g.setFont(font.deriveFont(Font.BOLD, 16f));
+        String bgText = "배경화면";
+        int bgTw = g.getFontMetrics().stringWidth(bgText);
+        g.drawString(bgText, GamePanel.WIDTH/2 - bgTw/2, bgPrevButton.bounds.y + 27);
+        
+        // 소리 & 필터
+        soundButton.draw(g, font);
+        crtFilterButton.draw(g, font);
+        
+        // 공 & 패들 버튼
+        ballColorButton.draw(g, font);
+        ballSkinButton.draw(g, font);
+        paddleColorButton.draw(g, font);
+        paddleShapeButton.draw(g, font);
+        
+        // 미리보기 텍스트
+        g.setColor(new Color(255, 255, 255, 100));
+        g.setFont(font.deriveFont(Font.BOLD, 14f));
+        String previewText = "▼ 미리보기 ▼";
+        int ptWidth = g.getFontMetrics().stringWidth(previewText);
+        g.drawString(previewText, GamePanel.WIDTH/2 - ptWidth/2, previewTextY); 
+        
+        // 미리보기 그림 (패들 & 공)
+        Paddle previewPaddle = gamePanel.getPaddle();
+        if (previewPaddle != null) {
+            double oldX = previewPaddle.getPosition().x;
+            double oldY = previewPaddle.getPosition().y;
+            
+            // 패들 그리기
+            previewPaddle.getPosition().x = GamePanel.WIDTH / 2 - previewPaddle.getWidth() / 2;
+            previewPaddle.getPosition().y = previewY; 
+            previewPaddle.draw(g);
+            
+            // 공 그리기
+            int ballSize = 20; 
+            int ballX = GamePanel.WIDTH / 2 - ballSize / 2;
+            int ballY = previewY - 45; 
+            
+            g.setColor(new java.awt.Color(255, 255, 255, 50));
+            g.fillOval(ballX+2, ballY+2, ballSize, ballSize);
+            
+            g.setColor(gamePanel.getCurrentBallColor());
+            g.fillOval(ballX, ballY, ballSize, ballSize);
+            
+            
+            previewPaddle.getPosition().x = oldX;
+            previewPaddle.getPosition().y = oldY;
         }
-    }
 
-    private void drawCenteredString(Graphics2D g2, String text, int x, int y) {
-        FontMetrics fm = g2.getFontMetrics();
-        int tx = x - fm.stringWidth(text) / 2;
-        g2.drawString(text, tx, y);
+        // 벽돌 버튼
+        brickColorButton.draw(g, font);
+        
+        // 뒤로 가기
+        backButton.draw(g, font);
     }
 }
