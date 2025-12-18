@@ -15,7 +15,6 @@ public class SoundManager {
 
     private static final String SOUND_PATH = "assets/";
     
-    
     public static final String SOUND_HIT = "hit.wav"; 
     public static final String SOUND_FAIL = "Fail.wav"; 
     public static final String SOUND_EXPLODE = "explode.wav"; 
@@ -30,6 +29,7 @@ public class SoundManager {
 
     private Map<String, Clip> clipCache;
     private Clip currentBgmClip;
+    private String currentBgmFileName; 
     private boolean isMuted = false;
     private float masterVolume = -10.0f;
 
@@ -65,54 +65,80 @@ public class SoundManager {
     public void playErrorSound()   { playSound(SOUND_ERROR); }
     public void playGameOverSound() { playSound(SOUND_GAMEOVER); }
     public void playBombSound() { playSound(SOUND_BOMB);}
+
     public void playSound(String fileName) {
         if (isMuted) return;
         try {
             Clip clip = loadClip(fileName);
             if (clip != null) {
+                // 효과음 재생 시 이전 재생이 덜 끝났더라도 강제로 처음부터 다시 재생
+                clip.stop(); 
+                clip.setFramePosition(0);
+                clip.setMicrosecondPosition(0); // 확실한 초기화
                 setVolume(clip, masterVolume);
-                clip.setFramePosition(0); 
                 clip.start();
             }
         } catch (Exception e) {}
     }
 
-    // ★ 브금 재생 핵심 로직
+    // ★ 버그 수정된 BGM 재생 로직
     public void playBGM(String fileName) {
         if (isMuted) return;
         
-        // 현재 재생 중인 브금이 새로 부르려는 브금과 같으면 무시 (끊김 방지)
-        if (currentBgmClip != null && currentBgmClip.isRunning()) {
-             // 같은 파일을 다시 재생하라고 하면 그냥 둠
+        // 이미 해당 곡이 재생 중이라면 건너뜀 (끊김 방지)
+        if (currentBgmClip != null && currentBgmClip.isRunning() && fileName.equals(currentBgmFileName)) {
              return; 
         }
 
-        stopBGM(); // 다른 브금이 나오고 있었다면 정지
+        stopBGM(); // 기존 BGM 끄기
         
         try {
             Clip clip = loadClip(fileName);
             if (clip != null) {
-                setVolume(clip, masterVolume - 5.0f); // 브금은 효과음보다 조금 작게
-                clip.loop(Clip.LOOP_CONTINUOUSLY);   // 무한 반복
-                clip.start();
+                // ★ 핵심 수정: 재생 전 상태를 완전히 리셋
+                clip.stop(); 
+                clip.setFramePosition(0);
+                clip.setMicrosecondPosition(0); // 프레임 위치와 마이크로초 위치 모두 0으로
+                
+                setVolume(clip, masterVolume - 5.0f);
+                
+                // ★ 수정: start() 대신 loop()만 호출 (loop가 재생을 시작함)
+                clip.loop(Clip.LOOP_CONTINUOUSLY); 
+                
                 currentBgmClip = clip;
+                currentBgmFileName = fileName;
             }
         } catch (Exception e) {
             System.out.println("브금 로드 실패: " + fileName);
+            e.printStackTrace();
         }
     }
     
     public void stopBGM() {
         if (currentBgmClip != null) {
-            if (currentBgmClip.isRunning()) currentBgmClip.stop();
+            currentBgmClip.stop();
+            // 멈출 때도 위치 초기화 (다음 재생을 위해)
+            currentBgmClip.setFramePosition(0);
+            currentBgmClip.setMicrosecondPosition(0);
+            
             currentBgmClip = null;
+            currentBgmFileName = null;
         }
     }
 
     private Clip loadClip(String fileName) throws UnsupportedAudioFileException, IOException, LineUnavailableException {
-        if (clipCache.containsKey(fileName)) return clipCache.get(fileName);
+        if (clipCache.containsKey(fileName)) {
+            Clip clip = clipCache.get(fileName);
+            // 혹시 닫혀있다면 다시 열기
+            if (!clip.isOpen()) {
+                clip.open();
+            }
+            return clip;
+        }
+        
         File file = new File(SOUND_PATH + fileName);
         if (!file.exists()) return null;
+        
         AudioInputStream ais = AudioSystem.getAudioInputStream(file);
         Clip clip = AudioSystem.getClip();
         clip.open(ais);
@@ -123,7 +149,9 @@ public class SoundManager {
     private void setVolume(Clip clip, float volume) {
         if (clip.isControlSupported(FloatControl.Type.MASTER_GAIN)) {
             FloatControl gainControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
-            gainControl.setValue(volume);
+            // 볼륨값 범위 제한 (너무 작거나 크지 않게)
+            float newVolume = Math.max(gainControl.getMinimum(), Math.min(gainControl.getMaximum(), volume));
+            gainControl.setValue(newVolume);
         }
     }
 
@@ -138,6 +166,9 @@ public class SoundManager {
     public void setMute(boolean muted) {
         this.isMuted = muted;
         if (muted) stopAll();
-        // 뮤트 해제 시 다시 브금 재생하고 싶으면 여기서 playBGM 호출 가능
+        else {
+            // 뮤트 해제 시 BGM이 설정되어 있었다면 다시 재생
+            if (currentBgmFileName != null) playBGM(currentBgmFileName);
+        }
     }
 }
