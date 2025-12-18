@@ -4,17 +4,16 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.Clip;
-import javax.sound.sampled.FloatControl;
-import javax.sound.sampled.LineUnavailableException;
-import javax.sound.sampled.UnsupportedAudioFileException;
+import javax.sound.sampled.*;
 
 public class SoundManager {
 
     private static final String SOUND_PATH = "assets/";
     
+<<<<<<< HEAD
+=======
+    // 기존 상수들 유지
+>>>>>>> 7e43b7b1f0205352241fe5564e3db6505e219339
     public static final String SOUND_HIT = "hit.wav"; 
     public static final String SOUND_FAIL = "Fail.wav"; 
     public static final String SOUND_EXPLODE = "explode.wav"; 
@@ -29,7 +28,11 @@ public class SoundManager {
 
     private Map<String, Clip> clipCache;
     private Clip currentBgmClip;
+<<<<<<< HEAD
     private String currentBgmFileName; 
+=======
+    private String currentBgmName = ""; // 현재/다음에 틀어야 할 브금 이름
+>>>>>>> 7e43b7b1f0205352241fe5564e3db6505e219339
     private boolean isMuted = false;
     private float masterVolume = -10.0f;
 
@@ -40,6 +43,7 @@ public class SoundManager {
         return INSTANCE;
     }
 
+    // GameButton 등에서 호출하는 메서드
     public static void playClick() {
         getInstance().playClickSound();
     }
@@ -54,17 +58,51 @@ public class SoundManager {
         try { loadClip(fileName); } catch (Exception e) {}
     }
 
+    // --- 효과음 메서드들 ---
     public void playHitSound() { playSound(SOUND_HIT); }
     public void playFailSound() { playSound(SOUND_FAIL); } 
     public void playExplodeSound() { playSound(SOUND_EXPLODE); } 
     public void playClickSound() { playSound(SOUND_CLICK); }
-    public void playVictorySound() { playSound(SOUND_VICTORY); }
     public void playPowerupSound() { playSound(SOUND_POWERUP); }
     public void playWallSound()    { playSound(SOUND_WALL); }
     public void playBuySound()     { playSound(SOUND_BUY); }
     public void playErrorSound()   { playSound(SOUND_ERROR); }
+<<<<<<< HEAD
     public void playGameOverSound() { playSound(SOUND_GAMEOVER); }
     public void playBombSound() { playSound(SOUND_BOMB);}
+=======
+    public void playBombSound()    { playSound(SOUND_BOMB); }
+
+    // --- 핵심: 게임 오버/승리 후 브금 복구 로직 ---
+    public void playGameOverSound() { playSpecialAndResume(SOUND_GAMEOVER); }
+    public void playVictorySound()  { playSpecialAndResume(SOUND_VICTORY); }
+
+    private void playSpecialAndResume(String fileName) {
+        if (isMuted) return;
+        
+        stopBGM(); // 일단 지금 나오는 브금 중단
+
+        try {
+            Clip clip = loadClip(fileName);
+            if (clip != null) {
+                setVolume(clip, masterVolume);
+                clip.setFramePosition(0);
+                
+                // [T-Point] 리스너: 특수음(게임오버 등)이 끝나면 브금 자동 재시작
+                clip.addLineListener(event -> {
+                    if (event.getType() == LineEvent.Type.STOP) {
+                        if (!isMuted && !currentBgmName.isEmpty()) {
+                            playBGM(currentBgmName);
+                        }
+                    }
+                });
+                clip.start();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+>>>>>>> 7e43b7b1f0205352241fe5564e3db6505e219339
 
     public void playSound(String fileName) {
         if (isMuted) return;
@@ -81,6 +119,7 @@ public class SoundManager {
         } catch (Exception e) {}
     }
 
+<<<<<<< HEAD
     // ★ 버그 수정된 BGM 재생 로직
     public void playBGM(String fileName) {
         if (isMuted) return;
@@ -105,6 +144,31 @@ public class SoundManager {
                 // ★ 수정: start() 대신 loop()만 호출 (loop가 재생을 시작함)
                 clip.loop(Clip.LOOP_CONTINUOUSLY); 
                 
+=======
+    // --- 브금 제어 로직 ---
+    public void playBGM(String fileName) {
+        this.currentBgmName = fileName;
+
+        if (isMuted) {
+            stopBGM();
+            return;
+        }
+
+        // 이미 같은 곡이 나오고 있다면 무시
+        if (currentBgmClip != null && currentBgmClip.isRunning() && fileName.equals(currentBgmName)) {
+            return;
+        }
+
+        stopBGM();
+
+        try {
+            Clip clip = loadClip(fileName);
+            if (clip != null) {
+                setVolume(clip, masterVolume - 5.0f);
+                clip.setFramePosition(0);
+                clip.loop(Clip.LOOP_CONTINUOUSLY);
+                clip.start();
+>>>>>>> 7e43b7b1f0205352241fe5564e3db6505e219339
                 currentBgmClip = clip;
                 currentBgmFileName = fileName;
             }
@@ -113,27 +177,53 @@ public class SoundManager {
             e.printStackTrace();
         }
     }
-    
+
     public void stopBGM() {
         if (currentBgmClip != null) {
             currentBgmClip.stop();
+<<<<<<< HEAD
             // 멈출 때도 위치 초기화 (다음 재생을 위해)
             currentBgmClip.setFramePosition(0);
             currentBgmClip.setMicrosecondPosition(0);
             
+=======
+>>>>>>> 7e43b7b1f0205352241fe5564e3db6505e219339
             currentBgmClip = null;
             currentBgmFileName = null;
         }
     }
 
+    // --- 설정 연동 (온오프) ---
+    public void setMuted(boolean muted) {
+        this.isMuted = muted;
+        if (isMuted) {
+            stopAll(); // 모든 소리 즉시 정지
+        } else {
+            // 다시 켜면 아까 틀려고 했던 브금 재생
+            if (!currentBgmName.isEmpty()) {
+                playBGM(currentBgmName);
+            }
+        }
+    }
+
+    // 기존에 있던 중복 메서드 setMute는 삭제하거나 setMuted를 호출하게 함
+    public void setMute(boolean muted) {
+        setMuted(muted);
+    }
+
     private Clip loadClip(String fileName) throws UnsupportedAudioFileException, IOException, LineUnavailableException {
         if (clipCache.containsKey(fileName)) {
+<<<<<<< HEAD
             Clip clip = clipCache.get(fileName);
             // 혹시 닫혀있다면 다시 열기
             if (!clip.isOpen()) {
                 clip.open();
             }
             return clip;
+=======
+            Clip c = clipCache.get(fileName);
+            if (c.isOpen()) return c;
+>>>>>>> 7e43b7b1f0205352241fe5564e3db6505e219339
         }
         
         File file = new File(SOUND_PATH + fileName);
@@ -157,11 +247,11 @@ public class SoundManager {
 
     public void stopAll() {
         stopBGM();
-        for (String key : clipCache.keySet()) {
-            Clip clip = clipCache.get(key);
+        for (Clip clip : clipCache.values()) {
             if (clip != null && clip.isRunning()) clip.stop();
         }
     }
+<<<<<<< HEAD
 
     public void setMute(boolean muted) {
         this.isMuted = muted;
@@ -171,4 +261,6 @@ public class SoundManager {
             if (currentBgmFileName != null) playBGM(currentBgmFileName);
         }
     }
+=======
+>>>>>>> 7e43b7b1f0205352241fe5564e3db6505e219339
 }
