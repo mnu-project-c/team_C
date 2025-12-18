@@ -1,0 +1,3 @@
+첫 걸음:true
+고득점자:false
+생존 전문가:false
