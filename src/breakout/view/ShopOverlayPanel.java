@@ -17,7 +17,7 @@ public class ShopOverlayPanel extends JPanel {
     private final GamePanel gamePanel;
     private Runnable onClose = null;
 
-    private GameButton buyPaddleBtn, buySlowBtn, buyLifeBtn, buyPierceBtn, buyDoubleBtn, buyLuckyBtn, backBtn;
+    private GameButton buyPaddleBtn, buySlowBtn, buyLifeBtn, buyPierceBtn, buyDoubleBtn, buyLuckyBtn, buyBombBtn, buyMultiBtn, backBtn;
 
     private static final int PADDLE_PRICE = 200;
     private static final int SLOW_PRICE   = 150;
@@ -25,6 +25,8 @@ public class ShopOverlayPanel extends JPanel {
     private static final int PIERCE_PRICE = 220;
     private static final int DOUBLE_PRICE = 200;
     private static final int LUCKY_PRICE  = 250;
+    private static final int BOMB_PRICE   = 260;
+    private static final int MULTI_PRICE  = 280;
 
     private String msg = "";
     private int msgTimer = 0;
@@ -58,7 +60,9 @@ public class ShopOverlayPanel extends JPanel {
         buyPierceBtn = new GameButton(col2X, startY + rowGap, 200, 50, "관통 볼 10초 >>> " + PIERCE_PRICE);
         buyDoubleBtn = new GameButton(col1X, startY + rowGap * 2, 200, 50, "더블 스코어 >>> " + DOUBLE_PRICE);
         buyLuckyBtn  = new GameButton(col2X, startY + rowGap * 2, 200, 50, "럭키 드로우 >>> " + LUCKY_PRICE);
-        backBtn      = new GameButton(GamePanel.WIDTH / 2 - 100, startY + rowGap * 3 + 10, 200, 50, "뒤로");
+        buyBombBtn   = new GameButton(col1X, startY + rowGap * 3, 200, 50, "BOMB BALL x1 >>> " + BOMB_PRICE);
+        buyMultiBtn  = new GameButton(col2X, startY + rowGap * 3, 200, 50, "멀티볼 x3 >>> " + MULTI_PRICE);
+        backBtn      = new GameButton(GamePanel.WIDTH / 2 - 100, startY + rowGap * 4 + 10, 200, 50, "뒤로");
 
         buyPaddleBtn.setSemiTransparentMode(true);
         buySlowBtn.setSemiTransparentMode(true);
@@ -66,6 +70,8 @@ public class ShopOverlayPanel extends JPanel {
         buyPierceBtn.setSemiTransparentMode(true);
         buyDoubleBtn.setSemiTransparentMode(true);
         buyLuckyBtn.setSemiTransparentMode(true);
+        buyBombBtn.setSemiTransparentMode(true);
+        buyMultiBtn.setSemiTransparentMode(true);
         backBtn.setSemiTransparentMode(true);
     }
 
@@ -90,6 +96,8 @@ public class ShopOverlayPanel extends JPanel {
         buyPierceBtn.update(mouseHandler);
         buyDoubleBtn.update(mouseHandler);
         buyLuckyBtn.update(mouseHandler);
+        buyBombBtn.update(mouseHandler);
+        buyMultiBtn.update(mouseHandler);
         backBtn.update(mouseHandler);
 
         
@@ -138,6 +146,22 @@ public class ShopOverlayPanel extends JPanel {
                 gamePanel.spendScore(LUCKY_PRICE);
                 String result = gamePanel.applyLuckyDrawFromShop();
                 showMsg(result);
+            } else showMsg("점수가 모자라요!");
+        }
+        
+        if (buyBombBtn.isClicked(mouseHandler)) {
+            if (gamePanel.getScore() >= BOMB_PRICE) {
+                gamePanel.spendScore(BOMB_PRICE);
+                gamePanel.applyBombBallFromShop();
+                showMsg("BOMB BALL x1!");
+            } else showMsg("점수가 모자라요!");
+        }
+        
+        if (buyMultiBtn.isClicked(mouseHandler)) {
+            if (gamePanel.getScore() >= MULTI_PRICE) {
+                gamePanel.spendScore(MULTI_PRICE);
+                gamePanel.applyMultiBallFromShop();
+                showMsg("멀티볼 x3!");
             } else showMsg("점수가 모자라요!");
         }
 
@@ -199,6 +223,8 @@ public class ShopOverlayPanel extends JPanel {
         buyPierceBtn.draw(g2, btnFont);
         buyDoubleBtn.draw(g2, btnFont);
         buyLuckyBtn.draw(g2, btnFont);
+        buyBombBtn.draw(g2, btnFont);
+        buyMultiBtn.draw(g2, btnFont);
         backBtn.draw(g2, btnFont);
 
         
