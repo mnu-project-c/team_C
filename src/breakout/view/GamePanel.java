@@ -41,7 +41,6 @@ public class GamePanel extends JPanel implements Runnable {
     public static final int WIDTH = 800;
     public static final int HEIGHT = 600;
     
-    // 상태 상수
     public static final int STATE_MENU = 0;
     public static final int STATE_PLAY = 1;
     public static final int STATE_GAME_OVER = 2;
@@ -52,7 +51,7 @@ public class GamePanel extends JPanel implements Runnable {
     public static final int STATE_EDITOR = 7;
     public static final int STATE_LEADERBOARD = 8;
     public static final int STATE_ACHIEVEMENTS = 9;
-    public static final int STATE_USER_CUSTOM = 10; // 새로 추가된 유저 커스텀 메뉴 상태
+    public static final int STATE_USER_CUSTOM = 10;
     
     private Thread gameThread;
     private boolean running = false;
@@ -78,15 +77,13 @@ public class GamePanel extends JPanel implements Runnable {
     private Ball ball;
     private MapGenerator mapGenerator;
     
-    // 메인 메뉴 버튼
     private GameButton startButton, settingsButton, exitButton;
-    private GameButton userCustomButton; // "유저 커스텀" 버튼
+    private GameButton userCustomButton;
 
-    // 유저 커스텀 메뉴 내부 버튼
     private GameButton leaderboardButton;
     private GameButton achievementButton;
     private GameButton editorButton;
-    private GameButton ucBackButton; // 유저 커스텀 메뉴의 "뒤로가기"
+    private GameButton ucBackButton;
     
     private LeaderboardPanel leaderboardPanel;
     private SettingsPanel settingsPanel;
@@ -94,7 +91,7 @@ public class GamePanel extends JPanel implements Runnable {
     private PausePanel pausePanel;
     private GameButton restartButton, menuButton;
     private GameButton victoryLevelButton;    
-    private GameButton achBackButton; // 업적 화면 내 "돌아가기"
+    private GameButton achBackButton;
     
     private Image[] ballSkins;
     private int currentSkinIndex = -1; 
@@ -124,12 +121,8 @@ public class GamePanel extends JPanel implements Runnable {
     private int ballColorIndex = 0; 
     private int brickColorIndex = 2;
     private int paddleColorIndex = 7; 
-<<<<<<< HEAD
-    private int paddleShapeIndex = 0; // 0:Rect, 1:Round, 2:Diamond, 3:Wave
-    private final Random rng = new Random();
-=======
     private int paddleShapeIndex = 0; 
->>>>>>> 49880c1f915c895f519260ec2f33ea8493d0870d
+    private final Random rng = new Random();
     
     private int currentLevel = 1;
     private boolean doubleScoreActive = false;
@@ -228,19 +221,16 @@ public class GamePanel extends JPanel implements Runnable {
         int startY = 270;
         int gap = 60;
         
-        // 메인 메뉴 버튼들
         startButton = createCenteredButton(startY, 200, 50, "게임 시작");
         userCustomButton = createCenteredButton(startY + gap, 200, 50, "커스텀 메뉴");
         settingsButton = createCenteredButton(startY + gap * 2, 200, 50, "설정");
         exitButton = createCenteredButton(startY + gap * 3, 200, 50, "게임 종료");
         
-        // 유저 커스텀 서브 메뉴 버튼들 (위치는 메인 메뉴와 동일한 Y축 시작점 사용)
         leaderboardButton = createCenteredButton(startY, 200, 50, "랭킹");
         achievementButton = createCenteredButton(startY + gap, 200, 50, "업적");
         editorButton = createCenteredButton(startY + gap * 2, 200, 50, "레벨 에디터");
         ucBackButton = createCenteredButton(startY + gap * 3, 200, 50, "뒤로가기");
         
-        // 기타 화면 버튼들
         restartButton = createCenteredButton(340, 200, 50, "다시 시작");
         victoryLevelButton = createCenteredButton(400, 200, 50, "레벨 선택"); 
         menuButton = createCenteredButton(460, 200, 50, "메인 메뉴");
@@ -341,25 +331,14 @@ public class GamePanel extends JPanel implements Runnable {
 
     public int getScore() { return score; }
     public void spendScore(int amount) { score -= amount; if (score < 0) score = 0; }
-<<<<<<< HEAD
-    public void applyLongPaddleFromShop() { paddle.expand(); }
-    public void applySlowBallFromShop() { ball.getVelocity().x *= 0.7; ball.getVelocity().y *= 0.7; }
-    public void addLifeFromShop() { lives++; }
-    public MouseHandler getMouseHandler() { return mouseHandler; }
-    public SoundManager getSoundManager() { return soundManager; }
-
-=======
     public void applyLongPaddleFromShop() { paddle.expand(); }
     public void applySlowBallFromShop() { activateSlowBall(); }
     public void addLifeFromShop() { lives++; }
     public void applyPierceFromShop() { activatePiercingBall(); }
     public void applyDoubleScoreFromShop() { activateDoubleScore(); }
     public MouseHandler getMouseHandler() { return mouseHandler; }
+    public SoundManager getSoundManager() { return soundManager; }
 
-    public SoundManager getSoundManager() {
-        return soundManager;
-    }
-    
     public String applyLuckyDrawFromShop() {
         LuckyPrize prize = rollLuckyPrize();
         switch (prize) {
@@ -383,7 +362,6 @@ public class GamePanel extends JPanel implements Runnable {
         }
     }
 
-<<<<<<< HEAD
     private LuckyPrize rollLuckyPrize() {
         int roll = rng.nextInt(100);
         if (roll < 20) return LuckyPrize.EXTRA_LIFE;
@@ -457,10 +435,8 @@ public class GamePanel extends JPanel implements Runnable {
     
     private void addScoreWithMultiplier(int amount) {
         score += doubleScoreActive ? amount * 2 : amount;
-=======
-<<<<<<< HEAD
-    // 페이드 전환
->>>>>>> caa30f4079cab9fc3c3a5d6c8e8822aabce4a219
+    }
+
     public void transitionTo(int nextState) {
         if (isFading) return;
         this.nextGameState = nextState;
@@ -472,15 +448,6 @@ public class GamePanel extends JPanel implements Runnable {
     public boolean isCRTFilterOn() { return isCRTFilterOn; }
     public void toggleCRTFilter() { isCRTFilterOn = !isCRTFilterOn; }
 
-<<<<<<< HEAD
-=======
-=======
-    public SoundManager getSoundManager() {
-    return soundManager;
->>>>>>> 49880c1f915c895f519260ec2f33ea8493d0870d
-    }
->>>>>>> 9691d1e8da6bfdfc2e2a9fdde74887205ddc5ca0
->>>>>>> caa30f4079cab9fc3c3a5d6c8e8822aabce4a219
     @Override
     public void run() {
         double drawInterval = 1000000000 / FPS;
@@ -535,7 +502,7 @@ public class GamePanel extends JPanel implements Runnable {
         if (!isFading || !isFadeOut) { 
             switch (gameState) {
                 case STATE_MENU: updateMenu(); break;
-                case STATE_USER_CUSTOM: updateUserCustom(); break; // 유저 커스텀 메뉴 업데이트
+                case STATE_USER_CUSTOM: updateUserCustom(); break;
                 case STATE_LEVEL_SELECT: 
                     if (levelSelectPanel != null && levelSelectPanel.update(mouseHandler)) { 
                         transitionTo(STATE_MENU); 
@@ -562,12 +529,12 @@ public class GamePanel extends JPanel implements Runnable {
                     break;
                 case STATE_LEADERBOARD:
                     if (leaderboardPanel != null && leaderboardPanel.update(mouseHandler)) {
-                        transitionTo(STATE_USER_CUSTOM); // 랭킹에서 나오면 유저 커스텀 메뉴로
+                        transitionTo(STATE_USER_CUSTOM);
                     }
                     break;
                 case STATE_ACHIEVEMENTS:
                     achBackButton.update(mouseHandler);
-                    if(achBackButton.isClicked(mouseHandler)) transitionTo(STATE_USER_CUSTOM); // 업적에서 나오면 유저 커스텀 메뉴로
+                    if(achBackButton.isClicked(mouseHandler)) transitionTo(STATE_USER_CUSTOM);
                     break;
             }
         }
@@ -575,7 +542,7 @@ public class GamePanel extends JPanel implements Runnable {
     
     private void updateMenu() {
         startButton.update(mouseHandler); 
-        userCustomButton.update(mouseHandler); // 유저 커스텀 버튼
+        userCustomButton.update(mouseHandler);
         settingsButton.update(mouseHandler); 
         exitButton.update(mouseHandler);
         
@@ -603,7 +570,7 @@ public class GamePanel extends JPanel implements Runnable {
     private void updateEditor() {
         levelEditor.update(mouseHandler);
         if (levelEditor.getExitButton().isClicked(mouseHandler)) {
-            transitionTo(STATE_USER_CUSTOM); // 에디터 종료 시 유저 커스텀 메뉴로
+            transitionTo(STATE_USER_CUSTOM);
         }
     }
     
@@ -645,10 +612,10 @@ public class GamePanel extends JPanel implements Runnable {
                     int bonus = (comboCount > 1) ? (comboCount * 10) : 0;
                     addScoreWithMultiplier(brick.scoreValue + bonus);
                     
-                    achievementManager.unlock("?????????");
+                    achievementManager.unlock("첫 걸음");
 
                     if (score >= 10000){
-                        achievementManager.unlock("???????????");
+                        achievementManager.unlock("고득점자");
                     }
 
                     if (brick.isDestroyed) {
@@ -781,7 +748,7 @@ public class GamePanel extends JPanel implements Runnable {
         
         switch (gameState) {
             case STATE_MENU: drawMenu(dbg); break;
-            case STATE_USER_CUSTOM: drawUserCustom(dbg); break; // 유저 커스텀 화면 그리기
+            case STATE_USER_CUSTOM: drawUserCustom(dbg); break;
             case STATE_LEVEL_SELECT: 
                 if (levelSelectPanel != null) levelSelectPanel.draw(dbg, customFont);
                 break;
@@ -867,18 +834,16 @@ public class GamePanel extends JPanel implements Runnable {
         drawCenteredString(g2, "HIGH SCORE: " + scoreManager.getHighScore(), WIDTH/2, 550);
         
         startButton.draw(g2, customFont); 
-        userCustomButton.draw(g2, customFont); // 유저 커스텀 버튼 그리기
+        userCustomButton.draw(g2, customFont);
         settingsButton.draw(g2, customFont); 
         exitButton.draw(g2, customFont);
     }
 
     private void drawUserCustom(Graphics2D g2) {
-        // 유저 커스텀 메뉴 화면 배경은 메인과 동일 (위에서 처리됨)
-        // 약간 어둡게 처리
         g2.setColor(new Color(0, 0, 0, 150));
         g2.fillRect(0, 0, WIDTH, HEIGHT);
 
-        drawCentered3DText(g2, "", 180, Color.GREEN, Color.DARK_GRAY, 50f);
+        drawCentered3DText(g2, "커스텀 메뉴", 180, Color.GREEN, Color.DARK_GRAY, 50f);
 
         leaderboardButton.draw(g2, customFont);
         achievementButton.draw(g2, customFont);
@@ -946,9 +911,6 @@ public class GamePanel extends JPanel implements Runnable {
         g2.setColor(Color.RED); g2.fillOval(x, y, 10, 10); g2.fillOval(x + 10, y, 10, 10); 
         int[] xp = {x, x + 10, x + 20}; int[] yp = {y + 5, y + 20, y + 5}; g2.fillPolygon(xp, yp, 3);
     }
-<<<<<<< HEAD
-
-=======
     
     private void drawActiveBuffs(Graphics2D g2) {
         ArrayList<String> status = new ArrayList<>();
@@ -975,7 +937,7 @@ public class GamePanel extends JPanel implements Runnable {
         int sec = (int)Math.ceil(ticks / (double)FPS);
         return sec + "s";
     }
->>>>>>> caa30f4079cab9fc3c3a5d6c8e8822aabce4a219
+
     private void drawAchievements(Graphics2D g2) {
         g2.setColor(new Color(0, 0, 0, 200));
         g2.fillRect(0, 0, WIDTH, HEIGHT);
@@ -1039,12 +1001,8 @@ public class GamePanel extends JPanel implements Runnable {
         }
         startShake(20); 
     }
-<<<<<<< HEAD
-}
-=======
     
     public Color getCurrentBallColor() {
         return colorList[ballColorIndex];
     }
 }
->>>>>>> 49880c1f915c895f519260ec2f33ea8493d0870d
