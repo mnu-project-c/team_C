@@ -26,6 +26,17 @@ public class SoundManager {
     private boolean isMuted = false;
     private float masterVolume = -10.0f;
 
+    private static SoundManager INSTANCE = null;
+
+    public static synchronized SoundManager getInstance() {
+        if (INSTANCE == null) INSTANCE = new SoundManager();
+        return INSTANCE;
+    }
+
+    public static void playClick() {
+        getInstance().playClickSound();
+    }
+
     public SoundManager() {
         this.clipCache = new HashMap<>();
         preLoadSound(SOUND_HIT);

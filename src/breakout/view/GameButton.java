@@ -1,15 +1,18 @@
 package breakout.view;
 
+import java.awt.AlphaComposite; // 추가됨
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Composite; // 추가됨
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.GradientPaint;
 import java.awt.Graphics2D;
-import java.awt.Rectangle; // ★ Rectangle import 확인
+import java.awt.Rectangle;
 import java.awt.RenderingHints;
 
 import breakout.manager.MouseHandler;
+import breakout.manager.SoundManager;
 
 public class GameButton {
     
@@ -17,12 +20,20 @@ public class GameButton {
     public String text;
     private boolean isHovered = false;
     
+    // ★ 반투명 모드 플래그
+    private boolean semiTransparentMode = false;
+    
     private final Color goldMain = new Color(255, 215, 0);
     private final Color goldDark = new Color(184, 134, 11);
 
     public GameButton(int x, int y, int width, int height, String text) {
         this.bounds = new Rectangle(x, y, width, height);
         this.text = text;
+    }
+    
+    // ★ 반투명 모드 설정 메소드
+    public void setSemiTransparentMode(boolean enable) {
+        this.semiTransparentMode = enable;
     }
 
     public void update(MouseHandler mouse) {
@@ -36,6 +47,8 @@ public class GameButton {
     public boolean isClicked(MouseHandler mouse) {
         if (isHovered && mouse.isPressed) {
             mouse.isPressed = false;
+            // 중앙에서 클릭 사운드를 재생하도록 처리하여, 버튼 클릭시 항상 소리가 나게 함
+            try { SoundManager.playClick(); } catch (Exception e) {}
             return true;
         }
         return false;
@@ -43,6 +56,16 @@ public class GameButton {
 
     public void draw(Graphics2D g, Font customFont) {
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        
+        // ★ 반투명 처리 로직
+        Composite originalComposite = g.getComposite();
+        if (semiTransparentMode && !isHovered) {
+            // 마우스가 올라가지 않았을 때 반투명 (50%)
+            g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
+        } else {
+            // 마우스가 올라갔거나 기본 모드일 때 불투명 (100%)
+            g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
+        }
         
         // 1. 버튼 배경
         GradientPaint gp;
@@ -77,6 +100,9 @@ public class GameButton {
         else g.setColor(Color.WHITE);
         
         drawCenteredString(g, text, bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+        
+        // ★ Composite 복구 (이후 그려질 요소들을 위해 필수)
+        g.setComposite(originalComposite);
     }
     
     private void drawCenteredString(Graphics2D g, String text, int x, int y) {

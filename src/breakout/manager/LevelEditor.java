@@ -18,7 +18,6 @@ import breakout.entity.HardBrick;
 import breakout.entity.MediumBrick;
 import breakout.entity.NormalBrick;
 import breakout.view.GameButton;
-import breakout.view.GamePanel;
 
 public class LevelEditor {
 
