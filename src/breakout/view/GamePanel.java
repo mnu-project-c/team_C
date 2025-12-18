@@ -484,6 +484,8 @@ public class GamePanel extends JPanel implements Runnable {
         if (mapGenerator.bricks.stream().noneMatch(b -> !b.isDestroyed)) {
             gameState = STATE_VICTORY;
             promptAndAddScore(score);
+            soundManager.stopBGM();
+            soundManager.playVictorySound();
         }
     }
     
@@ -504,12 +506,24 @@ public class GamePanel extends JPanel implements Runnable {
         if (gameState == STATE_VICTORY) {
             victoryLevelButton.update(mouseHandler); 
             if (victoryLevelButton.isClicked(mouseHandler)) {
+                soundManager.playClickSound();
+                soundManager.playBGM("Bgm.wav");
                 gameState = STATE_LEVEL_SELECT; 
             }
         }
         
-        if (restartButton.isClicked(mouseHandler)) { startGameWithLevel(currentLevel); }
-        if (menuButton.isClicked(mouseHandler)) { gameState = STATE_MENU; }
+        if (restartButton.isClicked(mouseHandler)) { 
+            soundManager.playClickSound();
+            soundManager.playBGM("Bgm.wav");
+            startGameWithLevel(currentLevel);
+         }
+         
+        if (menuButton.isClicked(mouseHandler)) { 
+            soundManager.playClickSound();
+            soundManager.playBGM("Bgm.wav");
+            gameState = STATE_MENU; 
+        
+        }
     }
     
 
