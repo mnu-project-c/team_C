@@ -3,12 +3,15 @@ package breakout.view;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
+import java.util.ArrayList;
+import java.util.List;
 
 import breakout.manager.MouseHandler;
 
 public class LevelSelectPanel {
     private GamePanel panel;
-    private GameButton lvl1Button, lvl2Button, lvl3Button, customPlayButton, lvlBackButton;
+    private List<GameButton> levelButtons;
+    private GameButton customPlayButton, lvlBackButton;
 
     public LevelSelectPanel(GamePanel panel) {
         this.panel = panel;
@@ -16,35 +19,68 @@ public class LevelSelectPanel {
     }
 
     private void initButtons() {
+        levelButtons = new ArrayList<>();
+        
+        // 4x4 그리드 설정
+        int cols = 4;
+        int rows = 4;
+        int btnWidth = 100;
+        int btnHeight = 50;
+        int gap = 20;
+        
+        // 전체 그리드 크기 계산하여 중앙 정렬
+        int totalWidth = (cols * btnWidth) + ((cols - 1) * gap);
+        int startX = (GamePanel.WIDTH - totalWidth) / 2;
+        int startY = 150;
+
+        for (int i = 0; i < 16; i++) {
+            int r = i / cols;
+            int c = i % cols;
+            
+            int x = startX + c * (btnWidth + gap);
+            int y = startY + r * (btnHeight + gap);
+            
+            levelButtons.add(new GameButton(x, y, btnWidth, btnHeight, "LV " + (i + 1)));
+        }
+
         int centerX = GamePanel.WIDTH / 2 - 100;
-        lvl1Button = new GameButton(centerX, 200, 200, 50, "1단계");
-        lvl2Button = new GameButton(centerX, 270, 200, 50, "2단계");
-        lvl3Button = new GameButton(centerX, 340, 200, 50, "3단계");
-        customPlayButton = new GameButton(centerX, 410, 200, 50, "커스텀 맵");
-        lvlBackButton = new GameButton(centerX, 480, 200, 50, "뒤로가기");
+        customPlayButton = new GameButton(centerX, 450, 200, 50, "커스텀 맵");
+        lvlBackButton = new GameButton(centerX, 510, 200, 50, "뒤로가기");
     }
 
-    /**
-     * Update returns true when back button was clicked
-     */
     public boolean update(MouseHandler mouseHandler) {
-        lvl1Button.update(mouseHandler); lvl2Button.update(mouseHandler);
-        lvl3Button.update(mouseHandler); customPlayButton.update(mouseHandler);
+        // 1~16 레벨 버튼 업데이트 및 클릭 확인
+        for (int i = 0; i < levelButtons.size(); i++) {
+            GameButton btn = levelButtons.get(i);
+            btn.update(mouseHandler);
+            if (btn.isClicked(mouseHandler)) {
+                panel.startGameWithLevel(i + 1); // 레벨 1부터 시작
+                return false;
+            }
+        }
+
+        customPlayButton.update(mouseHandler);
         lvlBackButton.update(mouseHandler);
-        if (lvl1Button.isClicked(mouseHandler)) { panel.startGameWithLevel(1); return false; }
-        if (lvl2Button.isClicked(mouseHandler)) { panel.startGameWithLevel(2); return false; }
-        if (lvl3Button.isClicked(mouseHandler)) { panel.startGameWithLevel(3); return false; }
+        
         if (customPlayButton.isClicked(mouseHandler)) { panel.startGameWithLevel(0); return false; }
         if (lvlBackButton.isClicked(mouseHandler)) { return true; }
+        
         return false;
     }
 
     public void draw(Graphics2D g2, Font customFont) {
-        g2.setColor(new Color(0, 0, 0, 150)); g2.fillRect(0, 0, GamePanel.WIDTH, GamePanel.HEIGHT);
-        g2.setColor(Color.WHITE); g2.setFont(new Font("Consolas", Font.BOLD, 40));
-        panel.drawCenteredString(g2, "SELECT LEVEL", GamePanel.WIDTH/2, 120);
-        lvl1Button.draw(g2, customFont); lvl2Button.draw(g2, customFont); 
-        lvl3Button.draw(g2, customFont); customPlayButton.draw(g2, customFont);
+        g2.setColor(new Color(0, 0, 0, 150)); 
+        g2.fillRect(0, 0, GamePanel.WIDTH, GamePanel.HEIGHT);
+        
+        g2.setColor(Color.WHITE); 
+        g2.setFont(new Font("Consolas", Font.BOLD, 40));
+        panel.drawCenteredString(g2, "SELECT LEVEL", GamePanel.WIDTH/2, 100);
+        
+        for (GameButton btn : levelButtons) {
+            btn.draw(g2, customFont);
+        }
+        
+        customPlayButton.draw(g2, customFont);
         lvlBackButton.draw(g2, customFont);
     }
 }

@@ -115,4 +115,7 @@ public class GameButton {
         int textY = y + (fm.getAscent() - fm.getDescent()) / 2;
         g.drawString(text, textX, textY);
     }
+    public Rectangle getBounds() {
+        return bounds;
+    }
 }
