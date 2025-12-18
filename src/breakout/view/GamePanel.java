@@ -16,6 +16,10 @@ import java.io.File;
 
 import javax.imageio.ImageIO;
 import javax.swing.JPanel;
+import javax.swing.JOptionPane;
+import java.util.List;
+import java.util.ArrayList;
+import breakout.manager.ScoreEntry;
 
 import breakout.engine.CollisionDetector;
 import breakout.entity.Ball;
@@ -43,6 +47,7 @@ public class GamePanel extends JPanel implements Runnable {
     public static final int STATE_PAUSED = 5;
     public static final int STATE_LEVEL_SELECT = 6;
     public static final int STATE_EDITOR = 7;
+    public static final int STATE_LEADERBOARD = 8;
     
     private Thread gameThread;
     private boolean running = false;
@@ -67,6 +72,7 @@ public class GamePanel extends JPanel implements Runnable {
     // 버튼들
     private GameButton shopButton;
     private GameButton startButton, settingsButton, exitButton, editorButton;
+    private GameButton leaderboardButton;
     private GameButton restartButton, menuButton;
     private GameButton soundButton, backButton;
     private GameButton resumeButton;
@@ -203,8 +209,9 @@ public class GamePanel extends JPanel implements Runnable {
         
         startButton = new GameButton(centerX, startY, 200, 50, "게임 시작");
         settingsButton = new GameButton(centerX, startY + gap, 200, 50, "설정");
-        editorButton = new GameButton(centerX, startY + gap * 2, 200, 50, "레벨 에디터");
-        exitButton = new GameButton(centerX, startY + gap * 3, 200, 50, "게임 종료");
+        leaderboardButton = new GameButton(centerX, startY + gap * 2, 200, 50, "랭킹");
+        editorButton = new GameButton(centerX, startY + gap * 3, 200, 50, "레벨 에디터");
+        exitButton = new GameButton(centerX, startY + gap * 4, 200, 50, "게임 종료");
         
         restartButton = new GameButton(centerX, 340, 200, 50, "다시 시작");
         victoryLevelButton = new GameButton(centerX, 400, 200, 50, "레벨 선택"); 
@@ -246,7 +253,7 @@ public class GamePanel extends JPanel implements Runnable {
         ball = new Ball(WIDTH / 2 - 10, HEIGHT - 100);
         applyBallSkin(); 
         mapGenerator = new MapGenerator();
-        scoreManager.loadHighScore();
+        scoreManager.load();
     }
     
     private void applyCustomColors() {
@@ -362,6 +369,7 @@ public class GamePanel extends JPanel implements Runnable {
             case STATE_VICTORY: updateResult(); break;
             case STATE_SETTINGS: updateSettings(); break;
             case STATE_EDITOR: updateEditor(); break;
+            case STATE_LEADERBOARD: updateLeaderboard(); break;
         }
 
         if (shopOverlay != null && shopOverlay.isVisible()) {
@@ -370,7 +378,7 @@ public class GamePanel extends JPanel implements Runnable {
     }
     
     private void updateMenu() {
-        startButton.update(mouseHandler); settingsButton.update(mouseHandler);
+        startButton.update(mouseHandler); settingsButton.update(mouseHandler); leaderboardButton.update(mouseHandler);
         exitButton.update(mouseHandler); editorButton.update(mouseHandler);
         
         if (startButton.isClicked(mouseHandler)) { soundManager.playClickSound(); gameState = STATE_LEVEL_SELECT; }
@@ -379,6 +387,7 @@ public class GamePanel extends JPanel implements Runnable {
             previousState = STATE_MENU; 
             gameState = STATE_SETTINGS; 
         }
+        if (leaderboardButton.isClicked(mouseHandler)) { soundManager.playClickSound(); previousState = STATE_MENU; gameState = STATE_LEADERBOARD; }
         if (editorButton.isClicked(mouseHandler)) { soundManager.playClickSound(); gameState = STATE_EDITOR; }
         if (exitButton.isClicked(mouseHandler)) { soundManager.playClickSound(); System.exit(0); }
     }
@@ -399,6 +408,31 @@ public class GamePanel extends JPanel implements Runnable {
         if (levelEditor.getExitButton().isClicked(mouseHandler)) {
             soundManager.playClickSound(); gameState = STATE_MENU;
         }
+    }
+    
+    private void updateLeaderboard() {
+        backButton.update(mouseHandler);
+        if (backButton.isClicked(mouseHandler)) {
+            soundManager.playClickSound(); gameState = STATE_MENU;
+        }
+    }
+    
+    private void drawLeaderboard(Graphics2D g2) {
+        g2.setColor(new Color(0, 0, 0, 200)); g2.fillRect(0, 0, WIDTH, HEIGHT);
+        g2.setColor(Color.WHITE);
+        if (customFont != null) g2.setFont(customFont.deriveFont(Font.BOLD, 40f));
+        else g2.setFont(new Font("SansSerif", Font.BOLD, 40));
+        drawCenteredString(g2, "LEADERBOARD", WIDTH/2, 100);
+        if (customFont != null) g2.setFont(customFont.deriveFont(Font.BOLD, 20f));
+        else g2.setFont(new Font("SansSerif", Font.BOLD, 20));
+        List<ScoreEntry> top = scoreManager.getTopScores();
+        int startY = 160;
+        for (int i = 0; i < top.size(); i++) {
+            ScoreEntry e = top.get(i);
+            String line = String.format("%2d. %-10s  %6d", i+1, e.getName(), e.getScore());
+            drawCenteredString(g2, line, WIDTH/2, startY + i * 30);
+        }
+        backButton.draw(g2, customFont);
     }
     
     private void updatePlay() {
@@ -457,13 +491,23 @@ public class GamePanel extends JPanel implements Runnable {
             } else {
                 soundManager.playFailSound();
                 gameState = STATE_GAME_OVER;
-                scoreManager.saveHighScore(score);
+                if (scoreManager.isHighScore(score)) {
+                    String name = JOptionPane.showInputDialog(null, "랭킹 등록! 이름을 입력하세요 (최대 10자):", "새로운 기록!", JOptionPane.PLAIN_MESSAGE);
+                    if (name == null || name.trim().isEmpty()) name = "익명";
+                    if (name.length() > 10) name = name.substring(0,10);
+                    scoreManager.addScore(name, score);
+                }
             }
         }
         
         if (mapGenerator.bricks.stream().noneMatch(b -> !b.isDestroyed)) {
             gameState = STATE_VICTORY;
-            scoreManager.saveHighScore(score);
+            if (scoreManager.isHighScore(score)) {
+                String name = JOptionPane.showInputDialog(null, "랭킹 등록! 이름을 입력하세요 (최대 10자):", "새로운 기록!", JOptionPane.PLAIN_MESSAGE);
+                if (name == null || name.trim().isEmpty()) name = "익명";
+                if (name.length() > 10) name = name.substring(0,10);
+                scoreManager.addScore(name, score);
+            }
         }
     }
     
@@ -623,6 +667,7 @@ public class GamePanel extends JPanel implements Runnable {
                 effectManager.draw(dbg); drawResult(dbg, "STAGE CLEAR!", Color.GREEN); break;
             case STATE_SETTINGS: drawSettings(dbg); break;
             case STATE_EDITOR: levelEditor.draw(dbg, customFont); break;
+            case STATE_LEADERBOARD: drawLeaderboard(dbg); break;
         }
         
         if (sx != 0 || sy != 0) dbg.translate(-sx, -sy);
@@ -658,6 +703,7 @@ public class GamePanel extends JPanel implements Runnable {
         
         startButton.draw(g2, customFont); 
         settingsButton.draw(g2, customFont); 
+        leaderboardButton.draw(g2, customFont); 
         editorButton.draw(g2, customFont); 
         exitButton.draw(g2, customFont);
     }
