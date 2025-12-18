@@ -769,7 +769,7 @@ public class GamePanel extends JPanel implements Runnable {
     private void drawPause(Graphics2D g2) {
         g2.setColor(new Color(0, 0, 0, 150)); g2.fillRect(0, 0, WIDTH, HEIGHT);
         g2.setColor(Color.ORANGE); g2.setFont(new Font("Arial", Font.BOLD, 50));
-        drawCenteredString(g2, "PAUSED", WIDTH/2, 200); 
+        drawCenteredString(g2, "*COWARD*", WIDTH/2, 200); 
         
         resumeButton.draw(g2, customFont); 
         shopButton.draw(g2, customFont);
