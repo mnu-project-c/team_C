@@ -106,7 +106,6 @@ public class GamePanel extends JPanel implements Runnable {
     private final Color[] colorList = { Color.RED, Color.ORANGE, Color.YELLOW, Color.GREEN, Color.BLUE, Color.MAGENTA, Color.WHITE, Color.CYAN };
     private final String[] colorNames = { "빨강", "주황", "노랑", "초록", "파랑", "보라", "흰색", "하늘" };
     
-    
     private final String[] shapeNames = { "기본", "알약", "샤프", "파도" };
     
     private int ballColorIndex = 0; 
@@ -205,11 +204,15 @@ public class GamePanel extends JPanel implements Runnable {
         restartButton = createCenteredButton(340, 200, 50, "다시 시작");
         victoryLevelButton = createCenteredButton(400, 200, 50, "레벨 선택"); 
         menuButton = createCenteredButton(460, 200, 50, "메인 메뉴");
-        achBackButton = new GameButton(WIDTH / 2 - 100, 500 , 200 , 50, "돌아가기");
         
-        //int setY = 130;
-        //int setGap = 50;
+        // Pause buttons moved to PausePanel
+        
+        
+        int setY = 130;
+        int setGap = 50;
 
+        // Settings UI buttons are initialized inside SettingsPanel
+        // Level select buttons moved to LevelSelectPanel; initialization removed from GamePanel
     }
     
     private GameButton createCenteredButton(int y, int width, int height, String text) {
@@ -295,9 +298,10 @@ public class GamePanel extends JPanel implements Runnable {
     public void setShopOpener(Runnable shopOpener) { this.shopOpener = shopOpener; }
     public void openShop() { if (shopOpener != null) shopOpener.run(); }
     public void pauseForOverlay() { gameState = STATE_PAUSED; }
-    public void resumeFromOverlay() { gameState = STATE_PLAY; }
+    
+    // ★ [수정] 상점에서 나오면 PAUSED 상태로 가도록 변경
+    public void resumeFromOverlay() { gameState = STATE_PAUSED; }
 
-    // Pause-specific helpers invoked by PausePanel
     public void resumeFromPause() { gameState = STATE_PLAY; wasEscPressed = false; }
     public void openSettingsFromPause() { previousState = STATE_PAUSED; gameState = STATE_SETTINGS; }
     public void gotoMenuFromPause() { gameState = STATE_MENU; }
@@ -337,15 +341,27 @@ public class GamePanel extends JPanel implements Runnable {
         inputManager.update();
         effectManager.update(); 
         
+        if (!inputManager.escape) {
+            wasEscPressed = false;
+        }
+        
         switch (gameState) {
             case STATE_MENU: updateMenu(); break;
             case STATE_LEVEL_SELECT: 
                 if (levelSelectPanel != null && levelSelectPanel.update(mouseHandler)) { gameState = STATE_MENU; } 
                 break;
             case STATE_PLAY: updatePlay(); break;
+            
             case STATE_PAUSED: 
                 if (pausePanel != null) pausePanel.update(mouseHandler); 
+                
+                if (inputManager.escape && !wasEscPressed) {
+                    soundManager.playClickSound();
+                    resumeFromPause(); 
+                    wasEscPressed = true; 
+                }
                 break;
+                
             case STATE_GAME_OVER:
             case STATE_VICTORY: updateResult(); break;
             case STATE_SETTINGS: 
@@ -393,8 +409,6 @@ public class GamePanel extends JPanel implements Runnable {
         
     }
     
-
-    
     private void updateEditor() {
         levelEditor.update(mouseHandler);
         if (levelEditor.getExitButton().isClicked(mouseHandler)) {
@@ -406,7 +420,6 @@ public class GamePanel extends JPanel implements Runnable {
         if (inputManager.escape && !wasEscPressed) {
             soundManager.playClickSound(); gameState = STATE_PAUSED; wasEscPressed = true; return;
         }
-        if (!inputManager.escape) wasEscPressed = false;
         
         paddle.update();
         ball.update();
@@ -480,8 +493,6 @@ public class GamePanel extends JPanel implements Runnable {
         }
     }
     
-
-    
     private void promptAndAddScore(int score) {
         if (!scoreManager.isHighScore(score)) return;
         String name = JOptionPane.showInputDialog(null, "랭킹 등록! 이름을 입력하세요 (최대 10자):", "새로운 기록!", JOptionPane.PLAIN_MESSAGE);
@@ -505,9 +516,6 @@ public class GamePanel extends JPanel implements Runnable {
         if (menuButton.isClicked(mouseHandler)) { gameState = STATE_MENU; }
     }
     
-
-
-    // Settings accessors (used by SettingsPanel)
     public boolean isSoundOn() { return isSoundOn; }
     public void toggleSound() { isSoundOn = !isSoundOn; soundManager.setMute(!isSoundOn); }
     public void prevBackground() { currentBgIndex = (currentBgIndex-1+6)%6; changeBackgroundBGM(); }
@@ -538,7 +546,6 @@ public class GamePanel extends JPanel implements Runnable {
     public void cycleBrickColor() { brickColorIndex = (brickColorIndex+1)%colorList.length; applyCustomColors(); }
     public String getBrickColorName() { return colorNames[brickColorIndex]; }
 
-    // expose paddle for preview in SettingsPanel
     public Paddle getPaddle() { return paddle; }
     
     private void changeBackgroundBGM() {
@@ -638,8 +645,6 @@ public class GamePanel extends JPanel implements Runnable {
         exitButton.draw(g2, customFont);
     }
     
-
-    
     private void drawHUD(Graphics2D g2) {
         g2.setColor(new Color(0, 0, 0, 100));
         g2.fillRect(0, 0, WIDTH, 40);
@@ -698,33 +703,7 @@ public class GamePanel extends JPanel implements Runnable {
         g2.setColor(Color.RED); g2.fillOval(x, y, 10, 10); g2.fillOval(x + 10, y, 10, 10); 
         int[] xp = {x, x + 10, x + 20}; int[] yp = {y + 5, y + 20, y + 5}; g2.fillPolygon(xp, yp, 3);
     }
-    private void drawAchievements(Graphics2D g2) {
-        g2.setColor(new Color(0, 0, 0, 200));
-        g2.fillRect(0, 0, WIDTH, HEIGHT);
-        
-        g2.setColor(Color.YELLOW);
-        g2.setFont(new Font("Consolas", Font.BOLD, 40));
-        drawCenteredString(g2, "ACHIEVEMENTS", WIDTH / 2, 80);
-        
-        g2.setFont(new Font("Malgun Gothic", Font.PLAIN, 18));
-        List<Achievement> list = achievementManager.getAchievements(); //
-        
-        for (int i = 0; i < list.size(); i++) {
-            Achievement a = list.get(i);
-            int y = 150 + (i * 60);
-            
-            // 달성 여부에 따라 색상 변경
-            g2.setColor(a.isUnlocked ? Color.GREEN : Color.GRAY);
-            g2.drawString(a.isUnlocked ? "✔ " + a.title : "🔒 " + a.title, 150, y);
-            
-            g2.setColor(Color.WHITE);
-            g2.setFont(new Font("Malgun Gothic", Font.ITALIC, 14));
-            g2.drawString(a.description, 150, y + 20);
-            g2.setFont(new Font("Malgun Gothic", Font.PLAIN, 18));
-        }
-    
-        achBackButton.draw(g2, customFont); //
-    }
+
     
     private void drawResult(Graphics2D g2, String title, Color color) {
         g2.setColor(new Color(0, 0, 0, 180)); g2.fillRect(0, 0, WIDTH, HEIGHT);
