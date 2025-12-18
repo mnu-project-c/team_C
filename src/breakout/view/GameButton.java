@@ -1,9 +1,9 @@
 package breakout.view;
 
-import java.awt.AlphaComposite; // 추가됨
+import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
 import java.awt.Color;
-import java.awt.Composite; // 추가됨
+import java.awt.Composite;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.GradientPaint;
@@ -20,7 +20,7 @@ public class GameButton {
     public String text;
     private boolean isHovered = false;
     
-    // ★ 반투명 모드 플래그
+    // 반투명 모드 플래그
     private boolean semiTransparentMode = false;
     
     private final Color goldMain = new Color(255, 215, 0);
@@ -31,7 +31,12 @@ public class GameButton {
         this.text = text;
     }
     
-    // ★ 반투명 모드 설정 메소드
+    // ★ [추가] 이 메서드가 없어서 오류가 났던 거야!
+    public void setText(String text) {
+        this.text = text;
+    }
+    
+    // 반투명 모드 설정 메소드
     public void setSemiTransparentMode(boolean enable) {
         this.semiTransparentMode = enable;
     }
@@ -47,7 +52,6 @@ public class GameButton {
     public boolean isClicked(MouseHandler mouse) {
         if (isHovered && mouse.isPressed) {
             mouse.isPressed = false;
-            // 중앙에서 클릭 사운드를 재생하도록 처리하여, 버튼 클릭시 항상 소리가 나게 함
             try { SoundManager.playClick(); } catch (Exception e) {}
             return true;
         }
@@ -57,7 +61,7 @@ public class GameButton {
     public void draw(Graphics2D g, Font customFont) {
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         
-        // ★ 반투명 처리 로직
+        // 반투명 처리 로직 (AlphaComposite 사용)
         Composite originalComposite = g.getComposite();
         if (semiTransparentMode && !isHovered) {
             // 마우스가 올라가지 않았을 때 반투명 (50%)
@@ -86,7 +90,7 @@ public class GameButton {
         g.setColor(new Color(255, 255, 220)); 
         g.drawRoundRect(bounds.x, bounds.y, bounds.width, bounds.height, 15, 15);
         
-        // 4. 텍스트 (폰트 적용)
+        // 4. 텍스트
         if (customFont != null) {
             g.setFont(customFont.deriveFont(Font.BOLD, 20f));
         } else {
@@ -101,7 +105,7 @@ public class GameButton {
         
         drawCenteredString(g, text, bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
         
-        // ★ Composite 복구 (이후 그려질 요소들을 위해 필수)
+        // Composite 복구
         g.setComposite(originalComposite);
     }
     
