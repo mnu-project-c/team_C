@@ -17,7 +17,7 @@ public class Ball extends GameObject {
     private Image skin; // ★ 스킨 이미지 변수
 
     public Ball(double x, double y) {
-        super(x, y, 40, 40); // 20x20 크기
+        super(x, y, 30, 30); 
         this.velocity = new Vector2D(4.0, -4.0);
     }
     
