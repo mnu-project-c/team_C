@@ -604,7 +604,11 @@ public class GamePanel extends JPanel implements Runnable {
     }
     
     public boolean isSoundOn() { return isSoundOn; }
-    public void toggleSound() { isSoundOn = !isSoundOn; soundManager.setMute(!isSoundOn); }
+    public void toggleSound() { isSoundOn = !isSoundOn; soundManager.setMute(!isSoundOn); 
+        if (isSoundOn) {
+        soundManager.playBGM("Bgm.wav");
+        }
+    }
     public void prevBackground() { currentBgIndex = (currentBgIndex-1+6)%6; changeBackgroundBGM(); }
     public void nextBackground() { currentBgIndex = (currentBgIndex+1)%6; changeBackgroundBGM(); }
     public void cycleBallColor() { ballColorIndex = (ballColorIndex+1)%colorList.length; }
