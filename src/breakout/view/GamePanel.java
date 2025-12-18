@@ -10,8 +10,8 @@ import java.awt.Image;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.Toolkit;
-import java.awt.event.KeyAdapter; // 추가됨
-import java.awt.event.KeyEvent;   // 추가됨
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.ArrayList;
@@ -52,7 +52,7 @@ public class GamePanel extends JPanel implements Runnable {
     public static final int STATE_LEADERBOARD = 8;
     public static final int STATE_ACHIEVEMENTS = 9;
     public static final int STATE_USER_CUSTOM = 10;
-    public static final int STATE_NAME_INPUT = 11; // 이름 입력 상태
+    public static final int STATE_NAME_INPUT = 11;
     
     private Thread gameThread;
     private boolean running = false;
@@ -94,7 +94,7 @@ public class GamePanel extends JPanel implements Runnable {
     private GameButton victoryLevelButton;    
     private GameButton achBackButton;
     
-    private NameInputModal nameModal; // 모달 객체
+    private NameInputModal nameModal;
     private Image[] ballSkins;
     private int currentSkinIndex = -1; 
     
@@ -154,7 +154,6 @@ public class GamePanel extends JPanel implements Runnable {
         inputManager = new InputManager();
         addKeyListener(inputManager);
         
-        // ★ 이름 입력을 위한 전용 키 리스너
         addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
@@ -555,7 +554,6 @@ public class GamePanel extends JPanel implements Runnable {
                     achBackButton.update(mouseHandler);
                     if(achBackButton.isClicked(mouseHandler)) transitionTo(STATE_USER_CUSTOM);
                     break;
-                // ★ 이름 입력 상태 업데이트 로직 추가
                 case STATE_NAME_INPUT:
                     if (nameModal != null) {
                         nameModal.update(mouseHandler, soundManager);
@@ -563,7 +561,7 @@ public class GamePanel extends JPanel implements Runnable {
                             if (!nameModal.isCancelled()) {
                                 scoreManager.addScore(nameModal.getInputName(), score);
                             }
-                            transitionTo(STATE_LEADERBOARD); // 입력 완료 후 랭킹으로 이동
+                            transitionTo(STATE_LEADERBOARD); 
                             nameModal = null;
                         }
                     }
@@ -631,6 +629,10 @@ public class GamePanel extends JPanel implements Runnable {
         
         for (Brick brick : mapGenerator.bricks) {
             if (!brick.isDestroyed) {
+                
+                // ★ [중요] 벽돌 상태 업데이트 (움직임 반영)
+                brick.update(); 
+                
                 if (ball.getBounds().intersects(brick.getBounds())) {
                     if (!piercingActive) {
                         CollisionDetector.resolveBallVsRect(ball, brick);
@@ -652,9 +654,20 @@ public class GamePanel extends JPanel implements Runnable {
 
                     if (brick.isDestroyed) {
                         soundManager.playExplodeSound();
+                        
+                        double cx = brick.getPosition().x + brick.getWidth() / 2;
+                        double cy = brick.getPosition().y + brick.getHeight() / 2;
+                        
+                        effectManager.createExplosion(cx, cy, brick.color);
+                        
+                        int totalScore = brick.scoreValue + (comboCount > 1 ? comboCount * 10 : 0);
+                        String text = "+" + totalScore;
+                        if (comboCount > 1) text += " (Combo!)";
+                        effectManager.addFloatingText(cx, cy - 20, text, Color.YELLOW);
+
                         if (brick instanceof breakout.entity.ExplosiveBrick) triggerExplosion(brick);
-                        effectManager.createExplosion(brick.getPosition().x+40, brick.getPosition().y+15, brick.color);
-                        powerUpManager.maybeSpawn(brick.getPosition().x+40, brick.getPosition().y+15);
+                        
+                        powerUpManager.maybeSpawn(cx, cy);
                         startShake(15 + Math.min(comboCount, 10)); 
                     } else {
                         soundManager.playHitSound();
@@ -691,13 +704,10 @@ public class GamePanel extends JPanel implements Runnable {
         }
     }
     
-    // ★ JOptionPane 대체 메서드 수정
     private void promptAndAddScore(int score) {
         if (!scoreManager.isHighScore(score)) return;
-        
-        // 커스텀 모달 생성
         nameModal = new NameInputModal(WIDTH/2 - 200, HEIGHT/2 - 100, 400, 200);
-        gameState = STATE_NAME_INPUT; // 상태 변경
+        gameState = STATE_NAME_INPUT;
     }
     
     private void updateResult() {
@@ -811,7 +821,6 @@ public class GamePanel extends JPanel implements Runnable {
             case STATE_ACHIEVEMENTS:
                 drawAchievements(dbg);
                 break;
-            // ★ 이름 입력 화면 그리기 로직 추가
             case STATE_NAME_INPUT: 
                 if (nameModal != null) nameModal.draw(dbg, customFont); 
                 break;
