@@ -1,4 +1,4 @@
-package breakout.manager;
+  package breakout.manager;
 
 import java.awt.Color;
 import java.awt.Graphics2D;

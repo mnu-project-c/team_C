@@ -10,6 +10,13 @@
             "name": "MainFrame",
             "request": "launch",
             "mainClass": "breakout.view.MainFrame",
+            "projectName": "team_C_ca24e7a8"
+        },
+        {
+            "type": "java",
+            "name": "MainFrame",
+            "request": "launch",
+            "mainClass": "breakout.view.MainFrame",
             "projectName": "team_C_c6f224de"
         },
         {
