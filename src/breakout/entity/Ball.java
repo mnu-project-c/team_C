@@ -32,73 +32,15 @@ public class Ball extends GameObject {
     public void setVelocity(Vector2D v) { this.velocity = v; }
     public void reverseX() { velocity.x = -velocity.x; }
     public void reverseY() { velocity.y = -velocity.y; }
-    public void setSkin(Image skin) { this.skin = skin; }
+    public void setSkin(Image skin) { this.skin = skin; } // 이 메서드가 정상 인식되어야 함
 
     @Override
     public void update() {
+        // 1. 위치 업데이트
         position.x += velocity.x;
         position.y += velocity.y;
 
-       // if (position.x < 0) { position.x = 0; velocity.x = -velocity.x; }
-       // if (position.x > GamePanel.WIDTH - width) { position.x = GamePanel.WIDTH - width; velocity.x = -velocity.x; }
-       // if (position.y < 0) { position.y = 0; velocity.y = -velocity.y; }
-    }
-
-    @Override
-    public void draw(Graphics2D g) {
-<<<<<<< HEAD
-   // int x = (int)position.x;
-       // int y = (int)position.y;
-       // int w = (int)width;
-        //int h = (int)height;
-
-
-         // 1. 잔상 그리기
-        java.awt.Composite originalComposite = g.getComposite();
-        
-        for (int i = 0; i < trailHistory.size(); i++) {
-            Vector2D pos = trailHistory.get(i);
-            float alpha = (float) (i + 1) / (maxTrailSize + 5); 
-            if (alpha > 1.0f) alpha = 1.0f;
-            
-            g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha * 0.5f));
-            
-            int trailSize = (int)width - (maxTrailSize - i); 
-            if (trailSize < 5) trailSize = 5;
-            
-            double drawX = pos.x + (width - trailSize) / 2;
-            double drawY = pos.y + (height - trailSize) / 2;
-            
-            g.fillOval((int)drawX, (int)drawY, trailSize, trailSize);
-        }
-        
-        g.setComposite(originalComposite); // 투명도 복구
-
-        // 2. 공 그리기 (둥근 스킨 적용)
-        if (skin != null) {
-            Shape originalClip = g.getClip();
-            Ellipse2D circleClip = new Ellipse2D.Double(position.x, position.y, width, height);
-            
-            g.setClip(circleClip); // 원형 클리핑 설정
-            g.drawImage(skin, (int)position.x, (int)position.y, (int)width, (int)height, null);
-            g.setClip(originalClip); // 클리핑 해제
-            
-            // 외곽선 살짝 그려주기 (더 깔끔해 보임)
-            g.setColor(new Color(0,0,0,50));
-            g.drawOval((int)position.x, (int)position.y, (int)width, (int)height);
-        } else {
-            g.fillOval((int)position.x, (int)position.y, (int)width, (int)height);
-        }
-    
-    
-=======
-        int x = (int)position.x;
-        int y = (int)position.y;
-        int w = (int)width;
-        int h = (int)height;
->>>>>>> 0217f6d687cfc749e8c7e5e18a1e0c268cb7b6c8
-        
-        // 벽 충돌 처리
+        // 2. 벽 충돌 처리 (draw 메서드에 있던 것을 이쪽으로 이동)
         if (position.x < 0) {
             position.x = 0;
             velocity.x = -velocity.x;
@@ -111,16 +53,19 @@ public class Ball extends GameObject {
             position.y = 0;
             velocity.y = -velocity.y;
         }
-        
-        // 잔상 위치 저장
+
+        // 3. 잔상 데이터 업데이트
         trailHistory.add(new Vector2D(position.x, position.y));
         if (trailHistory.size() > maxTrailSize) {
             trailHistory.remove(0);
         }
-<<<<<<< HEAD
-=======
+    }
+
+    @Override
+    public void draw(Graphics2D g) {
         java.awt.Composite originalComposite = g.getComposite();
         
+        // 1. 잔상 그리기
         for (int i = 0; i < trailHistory.size(); i++) {
             Vector2D pos = trailHistory.get(i);
             float alpha = (float) (i + 1) / (maxTrailSize + 5); 
@@ -139,31 +84,25 @@ public class Ball extends GameObject {
         
         g.setComposite(originalComposite); // 투명도 복구
 
-        // 2. 공 그리기 (둥근 스킨 적용)
+        // 2. 공 본체 그리기
         if (skin != null) {
             Shape originalClip = g.getClip();
             Ellipse2D circleClip = new Ellipse2D.Double(position.x, position.y, width, height);
             
-            g.setClip(circleClip); // 원형 클리핑 설정
+            g.setClip(circleClip); 
             g.drawImage(skin, (int)position.x, (int)position.y, (int)width, (int)height, null);
-            g.setClip(originalClip); // 클리핑 해제
+            g.setClip(originalClip); 
             
-            // 외곽선 살짝 그려주기 (더 깔끔해 보임)
-            g.setColor(new Color(0,0,0,50));
+            g.setColor(new Color(0, 0, 0, 50));
             g.drawOval((int)position.x, (int)position.y, (int)width, (int)height);
         } else {
             g.fillOval((int)position.x, (int)position.y, (int)width, (int)height);
         }
->>>>>>> 0217f6d687cfc749e8c7e5e18a1e0c268cb7b6c8
     }
 
-    
-    // ★ [추가] 이 메서드가 없어서 오류가 났던 거야!
     @Override
     public void onCollision(Collidable other) {
-        // 기본적인 패들 충돌 로직 (필요시 CollisionDetector에서 처리하더라도 여기 있어야 함)
         if (other instanceof Paddle) {
-            // 패들에 닿으면 위로 튕기기
              velocity.y = -Math.abs(velocity.y);
         }
     }
