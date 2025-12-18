@@ -1,3 +1,8 @@
 첫 걸음:true
+<<<<<<< HEAD
 고득점자:false
 생존 전문가:false
+=======
+고득점자:true
+생존 전문가:true
+>>>>>>> 12e6b3cce7282e54dc3939c5355b8409cf76ac3b
