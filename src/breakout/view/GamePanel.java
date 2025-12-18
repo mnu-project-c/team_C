@@ -13,7 +13,9 @@ import java.awt.RenderingHints;
 import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 import javax.imageio.ImageIO;
 import javax.swing.JPanel;
@@ -39,7 +41,6 @@ public class GamePanel extends JPanel implements Runnable {
     public static final int WIDTH = 800;
     public static final int HEIGHT = 600;
     
-    // 상태 상수
     public static final int STATE_MENU = 0;
     public static final int STATE_PLAY = 1;
     public static final int STATE_GAME_OVER = 2;
@@ -50,12 +51,15 @@ public class GamePanel extends JPanel implements Runnable {
     public static final int STATE_EDITOR = 7;
     public static final int STATE_LEADERBOARD = 8;
     public static final int STATE_ACHIEVEMENTS = 9;
-    public static final int STATE_NAME_INPUT = 10;
-    public static final int STATE_USER_CUSTOM = 11; // 새로 추가된 유저 커스텀 메뉴 상태
+    public static final int STATE_USER_CUSTOM = 10;
     
     private Thread gameThread;
     private boolean running = false;
     private final int FPS = 60;
+    private final double SLOW_FACTOR = 0.7;
+    private final int SLOW_DURATION = FPS * 10;
+    private final int PIERCE_DURATION = FPS * 10;
+    private final int DOUBLE_SCORE_DURATION = FPS * 15;
     
     private ShopOverlayPanel shopOverlay;
     private Runnable shopOpener;
@@ -73,15 +77,13 @@ public class GamePanel extends JPanel implements Runnable {
     private Ball ball;
     private MapGenerator mapGenerator;
     
-    // 메인 메뉴 버튼
     private GameButton startButton, settingsButton, exitButton;
-    private GameButton userCustomButton; // "유저 커스텀" 버튼
+    private GameButton userCustomButton;
 
-    // 유저 커스텀 메뉴 내부 버튼
     private GameButton leaderboardButton;
     private GameButton achievementButton;
     private GameButton editorButton;
-    private GameButton ucBackButton; // 유저 커스텀 메뉴의 "뒤로가기"
+    private GameButton ucBackButton;
     
     private LeaderboardPanel leaderboardPanel;
     private SettingsPanel settingsPanel;
@@ -89,10 +91,11 @@ public class GamePanel extends JPanel implements Runnable {
     private PausePanel pausePanel;
     private GameButton restartButton, menuButton;
     private GameButton victoryLevelButton;    
-    private GameButton achBackButton; // 업적 화면 내 "돌아가기"
+    private GameButton achBackButton;
     
     private Image[] ballSkins;
     private int currentSkinIndex = -1; 
+    
     private int gameState = STATE_MENU;
     private int previousState = STATE_MENU; 
     
@@ -107,8 +110,6 @@ public class GamePanel extends JPanel implements Runnable {
     private Image menuGifImage;
     private Font customFont;
     
-    private NameInputModal nameModal;
-    // 콤보 시스템 변수
     private int comboCount = 0;       
     private float comboScale = 1.0f;  
     
@@ -120,7 +121,8 @@ public class GamePanel extends JPanel implements Runnable {
     private int ballColorIndex = 0; 
     private int brickColorIndex = 2;
     private int paddleColorIndex = 7; 
-    private int paddleShapeIndex = 0; // 0:Rect, 1:Round, 2:Diamond, 3:Wave
+    private int paddleShapeIndex = 0; 
+    private final Random rng = new Random();
     
     private int currentLevel = 1;
     private boolean doubleScoreActive = false;
@@ -150,22 +152,6 @@ public class GamePanel extends JPanel implements Runnable {
         inputManager = new InputManager();
         addKeyListener(inputManager);
         
-        addKeyListener(new java.awt.event.KeyAdapter() {
-            @Override
-            public void keyPressed(java.awt.event.KeyEvent e) {
-                if (gameState == STATE_NAME_INPUT && nameModal != null) {
-                    nameModal.handleKeyPress(e);
-                    repaint();
-                }
-            }
-            @Override
-            public void keyTyped(java.awt.event.KeyEvent e) {
-                if (gameState == STATE_NAME_INPUT && nameModal != null) {
-                    nameModal.handleKeyTyped(e); // 한글/특수문자 포함 실제 문자 처리
-                    repaint();
-                }
-            }
-        });
         mouseHandler = new MouseHandler();
         addMouseListener(mouseHandler);
         addMouseMotionListener(mouseHandler);
@@ -183,7 +169,6 @@ public class GamePanel extends JPanel implements Runnable {
         loadResources();
         initGameObjects(); 
         initUI();          
-        // Panels depend on ScoreManager being initialized
         leaderboardPanel = new LeaderboardPanel(scoreManager);
         settingsPanel = new SettingsPanel(this);
         levelSelectPanel = new LevelSelectPanel(this);
@@ -236,27 +221,20 @@ public class GamePanel extends JPanel implements Runnable {
         int startY = 270;
         int gap = 60;
         
-        // 메인 메뉴 버튼들
         startButton = createCenteredButton(startY, 200, 50, "게임 시작");
         userCustomButton = createCenteredButton(startY + gap, 200, 50, "커스텀 메뉴");
         settingsButton = createCenteredButton(startY + gap * 2, 200, 50, "설정");
         exitButton = createCenteredButton(startY + gap * 3, 200, 50, "게임 종료");
         
-        // 유저 커스텀 서브 메뉴 버튼들 (위치는 메인 메뉴와 동일한 Y축 시작점 사용)
         leaderboardButton = createCenteredButton(startY, 200, 50, "랭킹");
         achievementButton = createCenteredButton(startY + gap, 200, 50, "업적");
         editorButton = createCenteredButton(startY + gap * 2, 200, 50, "레벨 에디터");
         ucBackButton = createCenteredButton(startY + gap * 3, 200, 50, "뒤로가기");
         
-        // 기타 화면 버튼들
         restartButton = createCenteredButton(340, 200, 50, "다시 시작");
         victoryLevelButton = createCenteredButton(400, 200, 50, "레벨 선택"); 
         menuButton = createCenteredButton(460, 200, 50, "메인 메뉴");
         achBackButton = new GameButton(WIDTH / 2 - 100, 500 , 200 , 50, "돌아가기");
-        
-        //int setY = 130;
-        //int setGap = 50;
-
     }
     
     private GameButton createCenteredButton(int y, int width, int height, String text) {
@@ -296,12 +274,14 @@ public class GamePanel extends JPanel implements Runnable {
     }
 
     private void resetGame() {
+        clearPowerStates();
         paddle = new Paddle(WIDTH / 2 - 50, HEIGHT - 60, inputManager);
         paddle.setColor(colorList[paddleColorIndex]);
         paddle.setShapeType(paddleShapeIndex);
         
         ball = new Ball(WIDTH / 2 - 10, HEIGHT - 100);
         applyBallSkin(); 
+        reapplySlowIfNeeded();
         
         if (currentLevel != 0) mapGenerator.loadLevel(currentLevel);
         else mapGenerator.bricks = levelEditor.getGeneratedBricks();
@@ -320,6 +300,7 @@ public class GamePanel extends JPanel implements Runnable {
         
         ball = new Ball(WIDTH / 2 - 10, HEIGHT - 100);
         applyBallSkin(); 
+        reapplySlowIfNeeded();
         
         powerUpManager.clear();
         comboCount = 0; 
@@ -345,27 +326,19 @@ public class GamePanel extends JPanel implements Runnable {
     public void resumeFromOverlay() { gameState = STATE_PAUSED; }
 
     public void resumeFromPause() { gameState = STATE_PLAY; wasEscPressed = false; }
-    public void openSettingsFromPause() { previousState = STATE_PAUSED; gameState = STATE_SETTINGS; }
-    public void gotoMenuFromPause() { gameState = STATE_MENU; }
+    public void openSettingsFromPause() { previousState = STATE_PAUSED; transitionTo(STATE_SETTINGS); }
+    public void gotoMenuFromPause() { transitionTo(STATE_MENU); }
 
     public int getScore() { return score; }
     public void spendScore(int amount) { score -= amount; if (score < 0) score = 0; }
-    public void applyLongPaddleFromShop() { paddle.expand(); }
-    public void applySlowBallFromShop() { ball.getVelocity().x *= 0.7; ball.getVelocity().y *= 0.7; }
-    public void addLifeFromShop() { lives++; }
-    public MouseHandler getMouseHandler() { return mouseHandler; }
-    public SoundManager getSoundManager() { return soundManager; }
     public void applyLongPaddleFromShop() { paddle.expand(); }
     public void applySlowBallFromShop() { activateSlowBall(); }
     public void addLifeFromShop() { lives++; }
     public void applyPierceFromShop() { activatePiercingBall(); }
     public void applyDoubleScoreFromShop() { activateDoubleScore(); }
     public MouseHandler getMouseHandler() { return mouseHandler; }
+    public SoundManager getSoundManager() { return soundManager; }
 
-    public SoundManager getSoundManager() {
-        return soundManager;
-    }
-    
     public String applyLuckyDrawFromShop() {
         LuckyPrize prize = rollLuckyPrize();
         switch (prize) {
@@ -388,6 +361,7 @@ public class GamePanel extends JPanel implements Runnable {
                 return "행운 실패..?";
         }
     }
+
     private LuckyPrize rollLuckyPrize() {
         int roll = rng.nextInt(100);
         if (roll < 20) return LuckyPrize.EXTRA_LIFE;
@@ -461,6 +435,8 @@ public class GamePanel extends JPanel implements Runnable {
     
     private void addScoreWithMultiplier(int amount) {
         score += doubleScoreActive ? amount * 2 : amount;
+    }
+
     public void transitionTo(int nextState) {
         if (isFading) return;
         this.nextGameState = nextState;
@@ -471,10 +447,6 @@ public class GamePanel extends JPanel implements Runnable {
     
     public boolean isCRTFilterOn() { return isCRTFilterOn; }
     public void toggleCRTFilter() { isCRTFilterOn = !isCRTFilterOn; }
-
-    public SoundManager getSoundManager() {
-    return soundManager;
-    }
 
     @Override
     public void run() {
@@ -530,7 +502,7 @@ public class GamePanel extends JPanel implements Runnable {
         if (!isFading || !isFadeOut) { 
             switch (gameState) {
                 case STATE_MENU: updateMenu(); break;
-                case STATE_USER_CUSTOM: updateUserCustom(); break; // 유저 커스텀 메뉴 업데이트
+                case STATE_USER_CUSTOM: updateUserCustom(); break;
                 case STATE_LEVEL_SELECT: 
                     if (levelSelectPanel != null && levelSelectPanel.update(mouseHandler)) { 
                         transitionTo(STATE_MENU); 
@@ -557,12 +529,12 @@ public class GamePanel extends JPanel implements Runnable {
                     break;
                 case STATE_LEADERBOARD:
                     if (leaderboardPanel != null && leaderboardPanel.update(mouseHandler)) {
-                        transitionTo(STATE_USER_CUSTOM); // 랭킹에서 나오면 유저 커스텀 메뉴로
+                        transitionTo(STATE_USER_CUSTOM);
                     }
                     break;
                 case STATE_ACHIEVEMENTS:
                     achBackButton.update(mouseHandler);
-                    if(achBackButton.isClicked(mouseHandler)) transitionTo(STATE_USER_CUSTOM); // 업적에서 나오면 유저 커스텀 메뉴로
+                    if(achBackButton.isClicked(mouseHandler)) transitionTo(STATE_USER_CUSTOM);
                     break;
             }
         }
@@ -570,7 +542,7 @@ public class GamePanel extends JPanel implements Runnable {
     
     private void updateMenu() {
         startButton.update(mouseHandler); 
-        userCustomButton.update(mouseHandler); // 유저 커스텀 버튼
+        userCustomButton.update(mouseHandler);
         settingsButton.update(mouseHandler); 
         exitButton.update(mouseHandler);
         
@@ -578,21 +550,9 @@ public class GamePanel extends JPanel implements Runnable {
         if (userCustomButton.isClicked(mouseHandler)) { transitionTo(STATE_USER_CUSTOM); }
         if (settingsButton.isClicked(mouseHandler)) { 
             previousState = STATE_MENU; 
-            gameState = STATE_SETTINGS; 
+            transitionTo(STATE_SETTINGS); 
         }
-        if (leaderboardButton.isClicked(mouseHandler)) {
-             previousState = STATE_MENU; gameState = STATE_LEADERBOARD; 
-        }
-        if (editorButton.isClicked(mouseHandler)) {
-             gameState = STATE_EDITOR; 
-        }
-        if (exitButton.isClicked(mouseHandler)) {
-             System.exit(0); 
-        }
-        if (achievementButton.isClicked(mouseHandler)){
-            gameState = STATE_ACHIEVEMENTS;
-        }
-        
+        if (exitButton.isClicked(mouseHandler)) { System.exit(0); }
     }
 
     private void updateUserCustom() {
@@ -610,11 +570,12 @@ public class GamePanel extends JPanel implements Runnable {
     private void updateEditor() {
         levelEditor.update(mouseHandler);
         if (levelEditor.getExitButton().isClicked(mouseHandler)) {
-            transitionTo(STATE_USER_CUSTOM); // 에디터 종료 시 유저 커스텀 메뉴로
+            transitionTo(STATE_USER_CUSTOM);
         }
     }
     
     private void updatePlay() {
+        tickPowerTimers();
         paddle.update();
         ball.update();
 
@@ -639,7 +600,9 @@ public class GamePanel extends JPanel implements Runnable {
         for (Brick brick : mapGenerator.bricks) {
             if (!brick.isDestroyed) {
                 if (ball.getBounds().intersects(brick.getBounds())) {
-                    CollisionDetector.resolveBallVsRect(ball, brick);
+                    if (!piercingActive) {
+                        CollisionDetector.resolveBallVsRect(ball, brick);
+                    }
                     brick.hit();
                     
                     comboCount++;
@@ -647,7 +610,7 @@ public class GamePanel extends JPanel implements Runnable {
                     if (comboScale > 3.0f) comboScale = 3.0f;
                     
                     int bonus = (comboCount > 1) ? (comboCount * 10) : 0;
-                    score += (brick.scoreValue + bonus);
+                    addScoreWithMultiplier(brick.scoreValue + bonus);
                     
                     achievementManager.unlock("첫 걸음");
 
@@ -665,11 +628,13 @@ public class GamePanel extends JPanel implements Runnable {
                         soundManager.playHitSound();
                         startShake(5);
                     }
-                    break; 
+                    if (!piercingActive) {
+                        break; 
+                    }
                 }
             }
         }
-        
+
         if (ball.getPosition().y > HEIGHT) {
             lives--;
             startShake(20);
@@ -696,23 +661,29 @@ public class GamePanel extends JPanel implements Runnable {
     
     private void promptAndAddScore(int score) {
         if (!scoreManager.isHighScore(score)) return;
-        nameModal = new NameInputModal(WIDTH/2 - 200, HEIGHT/2 -100, 400, 200);
-        gameState = STATE_NAME_INPUT;
+        String name = JOptionPane.showInputDialog(null, "랭킹 등록! 이름을 입력하세요 (최대 10자):", "새로운 기록!", JOptionPane.PLAIN_MESSAGE);
+        if (name == null || name.trim().isEmpty()) name = "익명";
+        if (name.length() > 10) name = name.substring(0,10);
+        scoreManager.addScore(name, score);
     }
     
     private void updateResult() {
+        if (isFading) return; 
+
         restartButton.update(mouseHandler);
         menuButton.update(mouseHandler);
         
         if (gameState == STATE_VICTORY) {
             victoryLevelButton.update(mouseHandler); 
             if (victoryLevelButton.isClicked(mouseHandler)) {
-                gameState = STATE_LEVEL_SELECT; 
+                transitionTo(STATE_LEVEL_SELECT); 
             }
         }
         
-        if (restartButton.isClicked(mouseHandler)) { startGameWithLevel(currentLevel); }
-        if (menuButton.isClicked(mouseHandler)) { gameState = STATE_MENU; }
+        if (restartButton.isClicked(mouseHandler)) { 
+            startGameWithLevel(currentLevel); 
+        }
+        if (menuButton.isClicked(mouseHandler)) { transitionTo(STATE_MENU); }
     }
     
     public boolean isSoundOn() { return isSoundOn; }
@@ -777,7 +748,7 @@ public class GamePanel extends JPanel implements Runnable {
         
         switch (gameState) {
             case STATE_MENU: drawMenu(dbg); break;
-            case STATE_USER_CUSTOM: drawUserCustom(dbg); break; // 유저 커스텀 화면 그리기
+            case STATE_USER_CUSTOM: drawUserCustom(dbg); break;
             case STATE_LEVEL_SELECT: 
                 if (levelSelectPanel != null) levelSelectPanel.draw(dbg, customFont);
                 break;
@@ -806,9 +777,6 @@ public class GamePanel extends JPanel implements Runnable {
                 break;
             case STATE_ACHIEVEMENTS:
                 drawAchievements(dbg);
-                break;
-            case STATE_NAME_INPUT:
-                if (nameModal != null) nameModal.draw(dbg, customFont);
                 break;
         }
         
@@ -866,18 +834,16 @@ public class GamePanel extends JPanel implements Runnable {
         drawCenteredString(g2, "HIGH SCORE: " + scoreManager.getHighScore(), WIDTH/2, 550);
         
         startButton.draw(g2, customFont); 
-        userCustomButton.draw(g2, customFont); // 유저 커스텀 버튼 그리기
+        userCustomButton.draw(g2, customFont);
         settingsButton.draw(g2, customFont); 
         exitButton.draw(g2, customFont);
     }
 
     private void drawUserCustom(Graphics2D g2) {
-        // 유저 커스텀 메뉴 화면 배경은 메인과 동일 (위에서 처리됨)
-        // 약간 어둡게 처리
         g2.setColor(new Color(0, 0, 0, 150));
         g2.fillRect(0, 0, WIDTH, HEIGHT);
 
-        drawCentered3DText(g2, "", 180, Color.GREEN, Color.DARK_GRAY, 50f);
+        drawCentered3DText(g2, "커스텀 메뉴", 180, Color.GREEN, Color.DARK_GRAY, 50f);
 
         leaderboardButton.draw(g2, customFont);
         achievementButton.draw(g2, customFont);
@@ -907,6 +873,8 @@ public class GamePanel extends JPanel implements Runnable {
             g2.setFont(new Font("Consolas", Font.BOLD, 20));
             g2.drawString("+" + extraLives, WIDTH - 25, 28);
         }
+        
+        drawActiveBuffs(g2);
         
         if (comboCount >= 2) {
             int fontSize = (int)(40 * comboScale); 
@@ -943,7 +911,7 @@ public class GamePanel extends JPanel implements Runnable {
         g2.setColor(Color.RED); g2.fillOval(x, y, 10, 10); g2.fillOval(x + 10, y, 10, 10); 
         int[] xp = {x, x + 10, x + 20}; int[] yp = {y + 5, y + 20, y + 5}; g2.fillPolygon(xp, yp, 3);
     }
-
+    
     private void drawActiveBuffs(Graphics2D g2) {
         ArrayList<String> status = new ArrayList<>();
         if (doubleScoreActive) status.add("2x SCORE " + formatTimer(doubleScoreTimer));
@@ -969,6 +937,7 @@ public class GamePanel extends JPanel implements Runnable {
         int sec = (int)Math.ceil(ticks / (double)FPS);
         return sec + "s";
     }
+
     private void drawAchievements(Graphics2D g2) {
         g2.setColor(new Color(0, 0, 0, 200));
         g2.fillRect(0, 0, WIDTH, HEIGHT);
@@ -1025,17 +994,14 @@ public class GamePanel extends JPanel implements Runnable {
             if (!b.isDestroyed && b != centerBrick && area.intersects(b.getBounds())) {
                 b.hit(); 
                 if (b.isDestroyed) {
-                    score += b.scoreValue;
+                    addScoreWithMultiplier(b.scoreValue);
                     effectManager.createExplosion(b.getPosition().x+40, b.getPosition().y+15, b.color);
                 }
             }
         }
         startShake(20); 
     }
-}
-
-}
-
+    
     public Color getCurrentBallColor() {
         return colorList[ballColorIndex];
     }
