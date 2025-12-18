@@ -36,9 +36,14 @@ public class PausePanel {
     }
 
     public void draw(Graphics2D g2, Font customFont) {
-        g2.setColor(new Color(0, 0, 0, 150)); g2.fillRect(0, 0, GamePanel.WIDTH, GamePanel.HEIGHT);
-        g2.setColor(Color.ORANGE); g2.setFont(new Font("Arial", Font.BOLD, 50));
-        panel.drawCenteredString(g2, "PAUSED", GamePanel.WIDTH/2, 200);
+        g2.setColor(new Color(0, 0, 0, 150)); 
+        g2.fillRect(0, 0, GamePanel.WIDTH, GamePanel.HEIGHT);
+        
+        // 문구 변경 및 색상 강조
+        g2.setColor(Color.RED); 
+        g2.setFont(new Font("Arial", Font.BOLD | Font.ITALIC, 60));
+        panel.drawCenteredString(g2, "*COWARD*", GamePanel.WIDTH/2, 200);
+        
         resumeButton.draw(g2, customFont); 
         shopButton.draw(g2, customFont);
         pauseSettingsButton.draw(g2, customFont); 
