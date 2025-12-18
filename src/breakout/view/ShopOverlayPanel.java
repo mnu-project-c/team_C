@@ -7,9 +7,7 @@ import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Toolkit;
 import java.io.File;
-
 import javax.swing.JPanel;
-
 import breakout.manager.MouseHandler;
 
 public class ShopOverlayPanel extends JPanel {
@@ -38,7 +36,7 @@ public class ShopOverlayPanel extends JPanel {
         setOpaque(false);
         setFocusable(true);
         
-        
+        // 배경 이미지 로드
         try {
             File file = new File("assets/shop_bg.jpg");
             if (file.exists()) {
@@ -48,12 +46,18 @@ public class ShopOverlayPanel extends JPanel {
             e.printStackTrace();
         }
 
-        int colGap = 40;
+        // 버튼 초기화 메서드 호출
+        initButtons();
+    }
+
+    // 누락되었던 버튼 초기화 메서드 생성
+    public void initButtons() {
         int rowGap = 65;
         int startY = 200;
         int col1X = GamePanel.WIDTH / 2 - 220;
         int col2X = GamePanel.WIDTH / 2 + 20;
 
+        // 버튼 객체 생성
         buyPaddleBtn = new GameButton(col1X, startY, 200, 50, "커져라! >>> " + PADDLE_PRICE);
         buySlowBtn   = new GameButton(col2X, startY, 200, 50, "볼 슬로우 >>> " + SLOW_PRICE);
         buyLifeBtn   = new GameButton(col1X, startY + rowGap, 200, 50, "하트 추가 >>> " + LIFE_PRICE);
@@ -64,6 +68,7 @@ public class ShopOverlayPanel extends JPanel {
         buyMultiBtn  = new GameButton(col2X, startY + rowGap * 3, 200, 50, "멀티볼 x3 >>> " + MULTI_PRICE);
         backBtn      = new GameButton(GamePanel.WIDTH / 2 - 100, startY + rowGap * 4 + 10, 200, 50, "뒤로");
 
+        // 반투명 모드 설정 (경고가 뜨던 colGap 변수는 삭제함)
         buyPaddleBtn.setSemiTransparentMode(true);
         buySlowBtn.setSemiTransparentMode(true);
         buyLifeBtn.setSemiTransparentMode(true);
@@ -75,6 +80,8 @@ public class ShopOverlayPanel extends JPanel {
         backBtn.setSemiTransparentMode(true);
     }
 
+    // ... (이하 updateOverlay, paintComponent 등 기존 코드와 동일)
+    
     public void setOnClose(Runnable onClose) {
         this.onClose = onClose;
     }
@@ -87,7 +94,6 @@ public class ShopOverlayPanel extends JPanel {
 
     public void updateOverlay(MouseHandler mouseHandler) {
         if (!isVisible()) return;
-
         if (msgTimer > 0) msgTimer--;
 
         buyPaddleBtn.update(mouseHandler);
@@ -100,7 +106,7 @@ public class ShopOverlayPanel extends JPanel {
         buyMultiBtn.update(mouseHandler);
         backBtn.update(mouseHandler);
 
-        
+        // 아이템 구매 로직
         if (buyPaddleBtn.isClicked(mouseHandler)) {
             if (gamePanel.getScore() >= PADDLE_PRICE) {
                 gamePanel.spendScore(PADDLE_PRICE);
@@ -181,9 +187,7 @@ public class ShopOverlayPanel extends JPanel {
     @Override
     protected void paintComponent(Graphics g) {
         if (!isVisible()) return;
-
         Graphics2D g2 = (Graphics2D) g;
-
         
         if (shopBgImage != null) {
             g2.drawImage(shopBgImage, 0, 0, getWidth(), getHeight(), this);
@@ -192,31 +196,24 @@ public class ShopOverlayPanel extends JPanel {
             g2.fillRect(0, 0, getWidth(), getHeight());
         }
 
-        
         g2.setFont(new Font("SansSerif", Font.BOLD, 50));
-        
         String title = "SSAGAL STORE";
         int titleX = GamePanel.WIDTH / 2;
         int titleY = 140;
 
-       
         g2.setColor(new Color(100, 0, 0));
         for (int i = 5; i > 0; i--) {
             drawCentered(g2, title, titleX + i, titleY + i);
         }
         
-        
         g2.setColor(Color.RED);
         drawCentered(g2, title, titleX, titleY);
 
-        
         g2.setFont(new Font("SansSerif", Font.BOLD, 28));
-        g2.setColor(new Color(255, 215, 0)); // Gold Color
+        g2.setColor(new Color(255, 215, 0)); 
         drawCentered(g2, "SCORE: " + gamePanel.getScore(), GamePanel.WIDTH / 2, 190);
 
-
         Font btnFont = new Font("SansSerif", Font.BOLD, 24);
-
         buyPaddleBtn.draw(g2, btnFont);
         buySlowBtn.draw(g2, btnFont);
         buyLifeBtn.draw(g2, btnFont);
@@ -227,7 +224,6 @@ public class ShopOverlayPanel extends JPanel {
         buyMultiBtn.draw(g2, btnFont);
         backBtn.draw(g2, btnFont);
 
-        
         if (msgTimer > 0 && msg != null && !msg.isEmpty()) {
             g2.setColor(Color.YELLOW);
             g2.setFont(new Font("SansSerif", Font.BOLD, 22));
