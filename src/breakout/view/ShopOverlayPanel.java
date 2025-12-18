@@ -33,7 +33,7 @@ public class ShopOverlayPanel extends JPanel {
         setOpaque(false);
         setFocusable(true);
         
-        // 상점 배경 이미지 로드 (shop_bg.jpg)
+        
         try {
             File file = new File("assets/shop_bg.jpg");
             if (file.exists()) {
@@ -45,12 +45,12 @@ public class ShopOverlayPanel extends JPanel {
 
         int centerX = GamePanel.WIDTH / 2 - 100;
 
-        buyPaddleBtn = new GameButton(centerX, 240, 200, 50, "LONG PADDLE - " + PADDLE_PRICE);
-        buySlowBtn   = new GameButton(centerX, 310, 200, 50, "SLOW BALL - " + SLOW_PRICE);
-        buyLifeBtn   = new GameButton(centerX, 380, 200, 50, "EXTRA LIFE - " + LIFE_PRICE);
-        backBtn      = new GameButton(centerX, 470, 200, 50, "BACK");
+        buyPaddleBtn = new GameButton(centerX, 240, 200, 50, "커져라~! >>> " + PADDLE_PRICE);
+        buySlowBtn   = new GameButton(centerX, 310, 200, 50, "스! 노우볼 >>> " + SLOW_PRICE);
+        buyLifeBtn   = new GameButton(centerX, 380, 200, 50, "체력 업! >>> " + LIFE_PRICE);
+        backBtn      = new GameButton(centerX, 470, 200, 50, "뒤로");
         
-        // ★ 버튼 반투명 모드 활성화 (평소엔 투명, 마우스 올리면 선명)
+        
         buyPaddleBtn.setSemiTransparentMode(true);
         buySlowBtn.setSemiTransparentMode(true);
         buyLifeBtn.setSemiTransparentMode(true);
@@ -77,29 +77,29 @@ public class ShopOverlayPanel extends JPanel {
         buyLifeBtn.update(mouseHandler);
         backBtn.update(mouseHandler);
 
-        // 구매 로직
+        
         if (buyPaddleBtn.isClicked(mouseHandler)) {
             if (gamePanel.getScore() >= PADDLE_PRICE) {
                 gamePanel.spendScore(PADDLE_PRICE);
                 gamePanel.applyLongPaddleFromShop();
-                showMsg("PURCHASED!");
-            } else showMsg("NOT ENOUGH SCORE!");
+                showMsg("구매완!");
+            } else showMsg("점수가 모자라요!");
         }
 
         if (buySlowBtn.isClicked(mouseHandler)) {
             if (gamePanel.getScore() >= SLOW_PRICE) {
                 gamePanel.spendScore(SLOW_PRICE);
                 gamePanel.applySlowBallFromShop();
-                showMsg("PURCHASED!");
-            } else showMsg("NOT ENOUGH SCORE!");
+                showMsg("구매완!");
+            } else showMsg("점수가 모자라요!");
         }
 
         if (buyLifeBtn.isClicked(mouseHandler)) {
             if (gamePanel.getScore() >= LIFE_PRICE) {
                 gamePanel.spendScore(LIFE_PRICE);
                 gamePanel.addLifeFromShop();
-                showMsg("LIFE +1!");
-            } else showMsg("NOT ENOUGH SCORE!");
+                showMsg("하트 +1!");
+            } else showMsg("점수가 모자라요!");
         }
 
         if (backBtn.isClicked(mouseHandler)) {
@@ -121,7 +121,7 @@ public class ShopOverlayPanel extends JPanel {
 
         Graphics2D g2 = (Graphics2D) g;
 
-        // 배경 그리기
+        
         if (shopBgImage != null) {
             g2.drawImage(shopBgImage, 0, 0, getWidth(), getHeight(), this);
         } else {
@@ -129,40 +129,40 @@ public class ShopOverlayPanel extends JPanel {
             g2.fillRect(0, 0, getWidth(), getHeight());
         }
 
-        // ★ 1. 타이틀: "SSAGAL STORE" (3D 스타일, 정열적인 빨강)
-        g2.setFont(new Font("Consolas", Font.BOLD, 50));
+        
+        g2.setFont(new Font("SansSerif", Font.BOLD, 50));
         
         String title = "SSAGAL STORE";
         int titleX = GamePanel.WIDTH / 2;
         int titleY = 140;
 
-        // 그림자 (검붉은색으로 여러 겹 그려 입체감 표현)
+       
         g2.setColor(new Color(100, 0, 0));
         for (int i = 5; i > 0; i--) {
             drawCentered(g2, title, titleX + i, titleY + i);
         }
         
-        // 메인 텍스트 (정열적인 빨강)
+        
         g2.setColor(Color.RED);
         drawCentered(g2, title, titleX, titleY);
 
-        // ★ 2. 점수: "SCORE" (골드 색상)
-        g2.setFont(new Font("Consolas", Font.BOLD, 28));
+        
+        g2.setFont(new Font("SansSerif", Font.BOLD, 28));
         g2.setColor(new Color(255, 215, 0)); // Gold Color
         drawCentered(g2, "SCORE: " + gamePanel.getScore(), GamePanel.WIDTH / 2, 190);
 
-        // 버튼들 그리기
-        Font btnFont = new Font("Consolas", Font.BOLD, 24);
+        
+        Font btnFont = new Font("SansSerif", Font.BOLD, 24);
 
         buyPaddleBtn.draw(g2, btnFont);
         buySlowBtn.draw(g2, btnFont);
         buyLifeBtn.draw(g2, btnFont);
         backBtn.draw(g2, btnFont);
 
-        // 메시지 표시
+        
         if (msgTimer > 0 && msg != null && !msg.isEmpty()) {
             g2.setColor(Color.YELLOW);
-            g2.setFont(new Font("Consolas", Font.BOLD, 22));
+            g2.setFont(new Font("SansSerif", Font.BOLD, 22));
             drawCentered(g2, msg, GamePanel.WIDTH / 2, 530);
         }
     }
