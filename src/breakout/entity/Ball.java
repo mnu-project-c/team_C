@@ -46,6 +46,7 @@ public class Ball extends GameObject {
 
     @Override
     public void draw(Graphics2D g) {
+<<<<<<< HEAD
    // int x = (int)position.x;
        // int y = (int)position.y;
        // int w = (int)width;
@@ -90,6 +91,12 @@ public class Ball extends GameObject {
         }
     
     
+=======
+        int x = (int)position.x;
+        int y = (int)position.y;
+        int w = (int)width;
+        int h = (int)height;
+>>>>>>> 0217f6d687cfc749e8c7e5e18a1e0c268cb7b6c8
         
         // 벽 충돌 처리
         if (position.x < 0) {
@@ -110,6 +117,44 @@ public class Ball extends GameObject {
         if (trailHistory.size() > maxTrailSize) {
             trailHistory.remove(0);
         }
+<<<<<<< HEAD
+=======
+        java.awt.Composite originalComposite = g.getComposite();
+        
+        for (int i = 0; i < trailHistory.size(); i++) {
+            Vector2D pos = trailHistory.get(i);
+            float alpha = (float) (i + 1) / (maxTrailSize + 5); 
+            if (alpha > 1.0f) alpha = 1.0f;
+            
+            g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha * 0.5f));
+            
+            int trailSize = (int)width - (maxTrailSize - i); 
+            if (trailSize < 5) trailSize = 5;
+            
+            double drawX = pos.x + (width - trailSize) / 2;
+            double drawY = pos.y + (height - trailSize) / 2;
+            
+            g.fillOval((int)drawX, (int)drawY, trailSize, trailSize);
+        }
+        
+        g.setComposite(originalComposite); // 투명도 복구
+
+        // 2. 공 그리기 (둥근 스킨 적용)
+        if (skin != null) {
+            Shape originalClip = g.getClip();
+            Ellipse2D circleClip = new Ellipse2D.Double(position.x, position.y, width, height);
+            
+            g.setClip(circleClip); // 원형 클리핑 설정
+            g.drawImage(skin, (int)position.x, (int)position.y, (int)width, (int)height, null);
+            g.setClip(originalClip); // 클리핑 해제
+            
+            // 외곽선 살짝 그려주기 (더 깔끔해 보임)
+            g.setColor(new Color(0,0,0,50));
+            g.drawOval((int)position.x, (int)position.y, (int)width, (int)height);
+        } else {
+            g.fillOval((int)position.x, (int)position.y, (int)width, (int)height);
+        }
+>>>>>>> 0217f6d687cfc749e8c7e5e18a1e0c268cb7b6c8
     }
 
     
