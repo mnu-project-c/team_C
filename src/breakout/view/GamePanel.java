@@ -52,7 +52,7 @@ public class GamePanel extends JPanel implements Runnable {
     public static final int STATE_LEADERBOARD = 8;
     public static final int STATE_ACHIEVEMENTS = 9;
     public static final int STATE_USER_CUSTOM = 10;
-    public static final int STATE_NAME_INPUT = 11; // 이름 입력 상태
+    public static final int STATE_NAME_INPUT = 11;
     
     private Thread gameThread;
     private boolean running = false;
@@ -97,7 +97,9 @@ public class GamePanel extends JPanel implements Runnable {
     private NameInputModal nameModal; // 모달 객체
     private Image[] ballSkins;
     private int currentSkinIndex = -1; 
-    
+
+    private NotificationPopup notificationPopup;
+
     private int gameState = STATE_MENU;
     private int previousState = STATE_MENU; 
     
@@ -181,6 +183,9 @@ public class GamePanel extends JPanel implements Runnable {
         powerUpManager = new PowerUpManager();
         achievementManager = new AchievementManager();
         soundManager = new SoundManager(); 
+
+        notificationPopup = new NotificationPopup();
+        achievementManager.setPopup(notificationPopup);
 
         soundManager.playBGM("Bgm.wav"); 
         
@@ -281,11 +286,17 @@ public class GamePanel extends JPanel implements Runnable {
     
     public void applyBallSkin() {
         if (ball == null) return;
-        if (currentSkinIndex != -1 && currentSkinIndex < ballSkins.length && ballSkins[currentSkinIndex] != null) {
-            ball.setSkin(ballSkins[currentSkinIndex]);
-        } else {
-            ball.setSkin(null); 
+
+        // 1. 스킨을 선택했고(-1이 아님), 2. 그 스킨이 해금된 상태일 때만 이미지를 입힙니다.
+        if (currentSkinIndex != -1 && isSkinUnlocked(currentSkinIndex)) {
+            if (currentSkinIndex < ballSkins.length && ballSkins[currentSkinIndex] != null) {
+                ball.setSkin(ballSkins[currentSkinIndex]);
+                return;
+            }
         }
+
+        // 그 외의 경우(스킨 '없음'이거나, 잠긴 스킨을 선택했을 때)는 일반 공으로 설정합니다.
+        ball.setSkin(null);
     }
     
     public void startGameWithLevel(int level) {
@@ -569,6 +580,9 @@ public class GamePanel extends JPanel implements Runnable {
                     }
                     break;
             }
+            if (notificationPopup != null){
+                notificationPopup.update();
+            }
         }
     }
     
@@ -636,7 +650,6 @@ public class GamePanel extends JPanel implements Runnable {
                         CollisionDetector.resolveBallVsRect(ball, brick);
                     }
                     brick.hit();
-                    
                     comboCount++;
                     comboScale = 2.0f + (comboCount * 0.1f); 
                     if (comboScale > 3.0f) comboScale = 3.0f;
@@ -687,6 +700,8 @@ public class GamePanel extends JPanel implements Runnable {
         }
         if (mapGenerator.bricks.stream().noneMatch(b -> !b.isDestroyed)) {
             gameState = STATE_VICTORY;
+            achievementManager.addClearCount();
+
             promptAndAddScore(score);
         }
     }
@@ -731,8 +746,23 @@ public class GamePanel extends JPanel implements Runnable {
 
     public int getBallSkinIndex() { return currentSkinIndex; }
     public void setBallSkinIndex(int idx) { currentSkinIndex = idx; }
-    public void cycleBallSkin() { currentSkinIndex++; if (currentSkinIndex >= 4) currentSkinIndex = -1; applyBallSkin(); }
-    public String getBallSkinName() { return (currentSkinIndex == -1) ? "없음" : "학생회 " + (currentSkinIndex + 1); }
+    public void cycleBallSkin() { 
+            currentSkinIndex++;
+        // 스킨이 총 4개(0,1,2,3)라면 4가 되었을 때 다시 -1(없음)로 돌아갑니다.
+        if (currentSkinIndex >= 4) { 
+            currentSkinIndex = -1; 
+        }
+        // 번호를 바꾼 후 실제 공에 적용할지 말지 결정합니다.
+        applyBallSkin();
+    }
+    public String getBallSkinName() { 
+        if (currentSkinIndex == -1) return "없음";
+        String name = "학생회 " + (currentSkinIndex + 1);
+        if (!isSkinUnlocked(currentSkinIndex)) {
+            return name + " (🔒 잠김)";
+        }
+        return name;
+    }
 
     public int getPaddleColorIndex() { return paddleColorIndex; }
     public void setPaddleColorIndex(int idx) { paddleColorIndex = idx; if (paddle != null) paddle.setColor(colorList[paddleColorIndex]); }
@@ -846,6 +876,9 @@ public class GamePanel extends JPanel implements Runnable {
 
         if (gameState == STATE_MENU || gameState == STATE_USER_CUSTOM) {
             Toolkit.getDefaultToolkit().sync(); 
+        }
+        if (notificationPopup != null) {
+            notificationPopup.draw(dbg, WIDTH);
         }
     }
     
@@ -1041,5 +1074,22 @@ public class GamePanel extends JPanel implements Runnable {
     
     public Color getCurrentBallColor() {
         return colorList[ballColorIndex];
+    }
+
+    public boolean isSkinUnlocked(int skinIndex) {
+        if (skinIndex == -1) return true; // '없음'은 항상 해금
+
+        switch (skinIndex) {
+            case 0: // 학생회 1 스킨
+                return achievementManager.isUnlocked("학생회의 자격-1");
+            case 1: // 학생회 2 스킨
+                return achievementManager.isUnlocked("학생회의 자격-2");
+            case 2: // 학생회 3 스킨
+                return achievementManager.isUnlocked("학생회의 자격-3");
+            case 3: // 학생회 4 스킨
+                return achievementManager.isUnlocked("학생회의 자격-4");
+            default:
+                return false;
+        }
     }
 }
