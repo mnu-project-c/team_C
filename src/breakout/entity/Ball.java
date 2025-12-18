@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import breakout.engine.Vector2D;
-import breakout.view.GamePanel;
 
 public class Ball extends GameObject { 
     
@@ -37,31 +36,24 @@ public class Ball extends GameObject {
     public void update() {
         position.x += velocity.x;
         position.y += velocity.y;
-
-       // if (position.x < 0) { position.x = 0; velocity.x = -velocity.x; }
-       // if (position.x > GamePanel.WIDTH - width) { position.x = GamePanel.WIDTH - width; velocity.x = -velocity.x; }
-       // if (position.y < 0) { position.y = 0; velocity.y = -velocity.y; }
-    }
-
-    @Override
-    public void draw(Graphics2D g) {
-        int x = (int)position.x;
-        int y = (int)position.y;
-        int w = (int)width;
-        int h = (int)height;
         
         trailHistory.add(new Vector2D(position.x, position.y));
         if (trailHistory.size() > maxTrailSize) {
             trailHistory.remove(0);
         }
+    }
+
+    @Override
+    public void draw(Graphics2D g) {
         java.awt.Composite originalComposite = g.getComposite();
         
         for (int i = 0; i < trailHistory.size(); i++) {
             Vector2D pos = trailHistory.get(i);
-            float alpha = (float) (i + 1) / (maxTrailSize + 5); 
+            
+            float alpha = (float) (i + 1) / maxTrailSize; 
             if (alpha > 1.0f) alpha = 1.0f;
             
-            g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha * 0.5f));
+            g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha * 0.6f));
             
             int trailSize = (int)width - (maxTrailSize - i); 
             if (trailSize < 5) trailSize = 5;
@@ -72,17 +64,16 @@ public class Ball extends GameObject {
             g.fillOval((int)drawX, (int)drawY, trailSize, trailSize);
         }
         
-        g.setComposite(originalComposite); // 투명도 복구
+        g.setComposite(originalComposite);
 
         if (skin != null) {
             Shape originalClip = g.getClip();
             Ellipse2D circleClip = new Ellipse2D.Double(position.x, position.y, width, height);
             
-            g.setClip(circleClip); // 원형 클리핑 설정
+            g.setClip(circleClip);
             g.drawImage(skin, (int)position.x, (int)position.y, (int)width, (int)height, null);
-            g.setClip(originalClip); // 클리핑 해제
+            g.setClip(originalClip);
             
-            // 외곽선 살짝 그려주기 (더 깔끔해 보임)
             g.setColor(new Color(0,0,0,50));
             g.drawOval((int)position.x, (int)position.y, (int)width, (int)height);
         } else {
@@ -90,8 +81,6 @@ public class Ball extends GameObject {
         }
     }
 
-    
-    // ★ [추가] 이 메서드가 없어서 오류가 났던 거야!
     @Override
     public void onCollision(Collidable other) {
         if (other instanceof Paddle) {
