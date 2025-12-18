@@ -60,7 +60,7 @@ public class ShopOverlayPanel extends JPanel {
         buyPierceBtn = new GameButton(col2X, startY + rowGap, 200, 50, "관통 볼 10초 >>> " + PIERCE_PRICE);
         buyDoubleBtn = new GameButton(col1X, startY + rowGap * 2, 200, 50, "더블 스코어 >>> " + DOUBLE_PRICE);
         buyLuckyBtn  = new GameButton(col2X, startY + rowGap * 2, 200, 50, "럭키 드로우 >>> " + LUCKY_PRICE);
-        buyBombBtn   = new GameButton(col1X, startY + rowGap * 3, 200, 50, "BOMB BALL x1 >>> " + BOMB_PRICE);
+        buyBombBtn   = new GameButton(col1X, startY + rowGap * 3, 200, 50, "폭탄볼 x1 >>> " + BOMB_PRICE);
         buyMultiBtn  = new GameButton(col2X, startY + rowGap * 3, 200, 50, "멀티볼 x3 >>> " + MULTI_PRICE);
         backBtn      = new GameButton(GamePanel.WIDTH / 2 - 100, startY + rowGap * 4 + 10, 200, 50, "뒤로");
 
