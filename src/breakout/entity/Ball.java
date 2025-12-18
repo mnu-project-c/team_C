@@ -9,7 +9,6 @@ import java.awt.Shape;
 import java.awt.geom.Ellipse2D;
 import java.util.ArrayList;
 import java.util.List;
-
 import breakout.engine.Vector2D;
 
 public class Ball extends GameObject { 
@@ -28,8 +27,6 @@ public class Ball extends GameObject {
 
     public Vector2D getVelocity() { return velocity; }
     public void setVelocity(Vector2D v) { this.velocity = v; }
-    public void reverseX() { velocity.x = -velocity.x; }
-    public void reverseY() { velocity.y = -velocity.y; }
     public void setSkin(Image skin) { this.skin = skin; }
 
     @Override
@@ -47,25 +44,24 @@ public class Ball extends GameObject {
     public void draw(Graphics2D g) {
         java.awt.Composite originalComposite = g.getComposite();
         
+        // 1. 잔상 그리기
         for (int i = 0; i < trailHistory.size(); i++) {
             Vector2D pos = trailHistory.get(i);
-            
             float alpha = (float) (i + 1) / maxTrailSize; 
             if (alpha > 1.0f) alpha = 1.0f;
             
             g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha * 0.6f));
-            
             int trailSize = (int)width - (maxTrailSize - i); 
             if (trailSize < 5) trailSize = 5;
             
             double drawX = pos.x + (width - trailSize) / 2;
             double drawY = pos.y + (height - trailSize) / 2;
-            
             g.fillOval((int)drawX, (int)drawY, trailSize, trailSize);
         }
         
         g.setComposite(originalComposite);
 
+        // 2. 공 본체 그리기
         if (skin != null) {
             Shape originalClip = g.getClip();
             Ellipse2D circleClip = new Ellipse2D.Double(position.x, position.y, width, height);
@@ -74,7 +70,7 @@ public class Ball extends GameObject {
             g.drawImage(skin, (int)position.x, (int)position.y, (int)width, (int)height, null);
             g.setClip(originalClip);
             
-            g.setColor(new Color(0,0,0,50));
+            g.setColor(new Color(0, 0, 0, 50));
             g.drawOval((int)position.x, (int)position.y, (int)width, (int)height);
         } else {
             g.fillOval((int)position.x, (int)position.y, (int)width, (int)height);
