@@ -49,6 +49,7 @@ public class GamePanel extends JPanel implements Runnable {
     public static final int STATE_EDITOR = 7;
     public static final int STATE_LEADERBOARD = 8;
     public static final int STATE_ACHIEVEMENTS = 9;
+    public static final int STATE_NAME_INPUT = 10;
     
     private Thread gameThread;
     private boolean running = false;
@@ -99,6 +100,7 @@ public class GamePanel extends JPanel implements Runnable {
     private Image menuGifImage;
     private Font customFont;
     
+    private NameInputModal nameModal;
     // 콤보 시스템 변수
     private int comboCount = 0;       
     private float comboScale = 1.0f;  
@@ -125,6 +127,22 @@ public class GamePanel extends JPanel implements Runnable {
         inputManager = new InputManager();
         addKeyListener(inputManager);
         
+        addKeyListener(new java.awt.event.KeyAdapter() {
+            @Override
+            public void keyPressed(java.awt.event.KeyEvent e) {
+                if (gameState == STATE_NAME_INPUT && nameModal != null) {
+                    nameModal.handleKeyPress(e);
+                    repaint();
+                }
+            }
+            @Override
+            public void keyTyped(java.awt.event.KeyEvent e) {
+                if (gameState == STATE_NAME_INPUT && nameModal != null) {
+                    nameModal.handleKeyTyped(e);
+                    repaint();
+                }
+            }
+        });
         mouseHandler = new MouseHandler();
         addMouseListener(mouseHandler);
         addMouseMotionListener(mouseHandler);
@@ -359,9 +377,22 @@ public class GamePanel extends JPanel implements Runnable {
                 if (leaderboardPanel != null && leaderboardPanel.update(mouseHandler)) {
                     gameState = STATE_MENU;
                 }
+                break;
             case STATE_ACHIEVEMENTS:
                 achBackButton.update(mouseHandler);
                 if(achBackButton.isClicked(mouseHandler)) gameState = STATE_MENU;
+                break;
+            case STATE_NAME_INPUT:
+                if (nameModal != null){
+                    nameModal.update(mouseHandler, soundManager);
+                    if (nameModal.isFinished()) {
+                        if (!nameModal.isCancelled()){
+                            scoreManager.addScore(nameModal.getInputName(), score);
+                        }
+                        gameState = STATE_LEADERBOARD;
+                        nameModal = null;
+                    }
+                }
                 break;
         }
 
@@ -491,10 +522,8 @@ public class GamePanel extends JPanel implements Runnable {
     
     private void promptAndAddScore(int score) {
         if (!scoreManager.isHighScore(score)) return;
-        String name = JOptionPane.showInputDialog(null, "랭킹 등록! 이름을 입력하세요 (최대 10자):", "새로운 기록!", JOptionPane.PLAIN_MESSAGE);
-        if (name == null || name.trim().isEmpty()) name = "익명";
-        if (name.length() > 10) name = name.substring(0,10);
-        scoreManager.addScore(name, score);
+        nameModal = new NameInputModal(WIDTH/2 - 200, HEIGHT/2 -100, 400, 200);
+        gameState = STATE_NAME_INPUT;
     }
     
     private void updateResult() {
@@ -603,6 +632,9 @@ public class GamePanel extends JPanel implements Runnable {
                 break;
             case STATE_ACHIEVEMENTS:
                 drawAchievements(dbg);
+                break;
+            case STATE_NAME_INPUT:
+                if (nameModal != null) nameModal.draw(dbg, customFont);
                 break;
         }
         
