@@ -1,5 +1,6 @@
 package breakout.manager;
 
+import java.awt.Color;
 import java.awt.Graphics2D;
 import java.util.ArrayList;
 
@@ -8,6 +9,7 @@ import breakout.entity.HardBrick;
 import breakout.entity.MediumBrick;
 import breakout.entity.NormalBrick;
 import breakout.entity.ExplosiveBrick;
+import breakout.entity.MovingBrick; // ★ Import 추가
 import breakout.view.GamePanel;
 
 public class MapGenerator {
@@ -26,19 +28,19 @@ public class MapGenerator {
         switch(level) {
             case 1: createStandardGrid(4, 8); break;
             case 2: createCheckeredPattern(); break;
-            case 3: createPyramid(); break; // 수정됨
+            case 3: createPyramid(); break;      // 움직이는 벽돌 추가
             case 4: createHeartShape(); break;
             case 5: createTunnel(); break;
-            case 6: createXShape(); break;
+            case 6: createXShape(); break;       // 움직이는 벽돌 추가
             case 7: createInvaders(); break;
             case 8: createDiamond(); break;
-            case 9: createZigZag(); break;
+            case 9: createZigZag(); break;       // 움직이는 벽돌 추가
             case 10: createDoubleStairs(); break;
             case 11: createSmileFace(); break;
-            case 12: createRandomChaos(); break;
+            case 12: createRandomChaos(); break; // 움직이는 벽돌 추가
             case 13: createIronWall(); break;
             case 14: createMineField(); break;
-            case 15: createCircle(); break;
+            case 15: createCircle(); break;      // 움직이는 벽돌 추가
             case 16: createTheEnd(); break;
             default: createStandardGrid(4, 8); break;
         }
@@ -72,7 +74,7 @@ public class MapGenerator {
         }
     }
     
-    // LV 3: 피라미드 (오류 수정됨)
+    // LV 3: 피라미드 (★ 수정됨: 중간층이 움직임)
     private void createPyramid() {
         int rows = 7;
         for (int i = 0; i < rows; i++) {
@@ -82,10 +84,20 @@ public class MapGenerator {
                 double x = startX + j * 85;
                 double y = 50 + i * 35;
                 
-                // 생성자를 사용하여 직접 생성 (setPosition 오류 해결)
-                if(i > 4) bricks.add(new HardBrick(x, y, brickWidth, brickHeight));
-                else if (i > 2) bricks.add(new MediumBrick(x, y, brickWidth, brickHeight));
-                else bricks.add(new NormalBrick(x, y, brickWidth, brickHeight));
+                if(i > 4) {
+                    bricks.add(new HardBrick(x, y, brickWidth, brickHeight));
+                } 
+                // ★ 3번째 줄(i=2)이나 4번째 줄(i=3)은 움직이는 벽돌로 교체
+                else if (i == 2 || i == 3) {
+                    // x, y, w, h, color, hp, range, speed
+                    bricks.add(new MovingBrick(x, y, brickWidth, brickHeight, Color.MAGENTA, 2, 50, 2.0));
+                }
+                else if (i > 2) {
+                    bricks.add(new MediumBrick(x, y, brickWidth, brickHeight));
+                } 
+                else {
+                    bricks.add(new NormalBrick(x, y, brickWidth, brickHeight));
+                }
             }
         }
     }
@@ -122,7 +134,7 @@ public class MapGenerator {
         }
     }
 
-    // LV 6
+    // LV 6: X자 형태 (★ 수정됨: 가로 중앙선이 움직임)
     private void createXShape() {
         int size = 9;
         int startX = getStartX(size);
@@ -130,7 +142,12 @@ public class MapGenerator {
             for(int j=0; j<size; j++) {
                 if (i == j || i == (size - 1 - j)) {
                     bricks.add(new ExplosiveBrick(startX + j*85, 50 + i*35, brickWidth, brickHeight));
-                } else if (j == size/2 || i == size/2) {
+                } 
+                // ★ 중앙 가로선(i=size/2)을 움직이는 벽돌로 변경
+                else if (i == size/2) {
+                     bricks.add(new MovingBrick(startX + j*85, 50 + i*35, brickWidth, brickHeight, Color.ORANGE, 2, 40, 3.0));
+                }
+                else if (j == size/2) {
                      bricks.add(new NormalBrick(startX + j*85, 50 + i*35, brickWidth, brickHeight));
                 }
             }
@@ -161,14 +178,19 @@ public class MapGenerator {
         }
     }
 
-    // LV 9
+    // LV 9: 지그재그 (★ 수정됨: 짝수 줄을 움직이게 설정)
     private void createZigZag() {
         int rows = 7; int cols = 8;
         int startX = getStartX(cols);
         for(int i=0; i<rows; i++) {
             for(int j=0; j<cols; j++) {
                 if ((i % 2 == 0 && j % 2 == 0) || (i % 2 != 0 && j % 2 != 0)) {
-                    bricks.add(new MediumBrick(startX + j*85, 60 + i*35, brickWidth, brickHeight));
+                    // ★ 짝수 행(i % 2 == 0)일 때 움직이는 벽돌 배치
+                    if (i % 2 == 0) {
+                        bricks.add(new MovingBrick(startX + j*85, 60 + i*35, brickWidth, brickHeight, Color.PINK, 2, 30, 1.5));
+                    } else {
+                        bricks.add(new MediumBrick(startX + j*85, 60 + i*35, brickWidth, brickHeight));
+                    }
                 }
             }
         }
@@ -204,14 +226,19 @@ public class MapGenerator {
         }
     }
 
-    // LV 12
+    // LV 12: 랜덤 카오스 (★ 수정됨: 랜덤 확률로 움직이는 벽돌 등장)
     private void createRandomChaos() {
         int rows = 6; int cols = 8;
         int startX = getStartX(cols);
         for(int i=0; i<rows; i++) {
             for(int j=0; j<cols; j++) {
                 if (Math.random() > 0.3) { 
-                    addRandomBrick(startX + j*85, 60 + i*35);
+                    // ★ 15% 확률로 움직이는 벽돌 추가
+                    if (Math.random() < 0.15) {
+                        bricks.add(new MovingBrick(startX + j*85, 60 + i*35, brickWidth, brickHeight, Color.RED, 2, 40, 2.5));
+                    } else {
+                        addRandomBrick(startX + j*85, 60 + i*35);
+                    }
                 }
             }
         }
@@ -240,7 +267,7 @@ public class MapGenerator {
         }
     }
 
-    // LV 15
+    // LV 15: 원형 (★ 수정됨: 중앙 띠 부분이 움직임)
     private void createCircle() {
         int centerX = GamePanel.WIDTH / 2;
         int centerY = 200;
@@ -254,7 +281,12 @@ public class MapGenerator {
                 double dist = Math.sqrt(Math.pow(x + brickWidth/2 - centerX, 2) + Math.pow(y + brickHeight/2 - centerY, 2));
                 
                 if (dist < radius && dist > radius - 100) { 
-                    bricks.add(new MediumBrick(x, y, 50, 30)); 
+                    // ★ 화면 중앙 높이 쯤에 있는 벽돌(i가 4~5)은 움직이게 설정
+                    if (i == 4 || i == 5) {
+                        bricks.add(new MovingBrick(x, y, 50, 30, Color.CYAN, 2, 30, 2.0)); 
+                    } else {
+                        bricks.add(new MediumBrick(x, y, 50, 30)); 
+                    }
                 }
             }
         }

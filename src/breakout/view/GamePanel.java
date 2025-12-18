@@ -10,8 +10,8 @@ import java.awt.Image;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.Toolkit;
-import java.awt.event.KeyAdapter; // 추가됨
-import java.awt.event.KeyEvent;   // 추가됨
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.ArrayList;
@@ -35,6 +35,7 @@ import breakout.manager.ScoreManager;
 import breakout.manager.SoundManager;
 import breakout.entity.Achievement;
 import breakout.manager.AchievementManager;
+import breakout.engine.Vector2D;
 
 public class GamePanel extends JPanel implements Runnable {
     
@@ -75,7 +76,7 @@ public class GamePanel extends JPanel implements Runnable {
     private LevelEditor levelEditor;
     
     private Paddle paddle;
-    private Ball ball;
+    private final ArrayList<Ball> balls = new ArrayList<>();
     private MapGenerator mapGenerator;
     
     private GameButton startButton, settingsButton, exitButton;
@@ -94,7 +95,7 @@ public class GamePanel extends JPanel implements Runnable {
     private GameButton victoryLevelButton;    
     private GameButton achBackButton;
     
-    private NameInputModal nameModal; // 모달 객체
+    private NameInputModal nameModal;
     private Image[] ballSkins;
     private int currentSkinIndex = -1; 
 
@@ -135,6 +136,7 @@ public class GamePanel extends JPanel implements Runnable {
     private int piercingTimer = 0;
     private boolean slowBallActive = false;
     private int slowBallTimer = 0;
+    private int bombBallCharges = 0;
     private enum LuckyPrize {
         EXTRA_LIFE, WIDE_PADDLE, SLOW_BALL, PIERCING_BALL, DOUBLE_SCORE
     }
@@ -156,7 +158,6 @@ public class GamePanel extends JPanel implements Runnable {
         inputManager = new InputManager();
         addKeyListener(inputManager);
         
-        // ★ 이름 입력을 위한 전용 키 리스너
         addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
@@ -271,8 +272,8 @@ public class GamePanel extends JPanel implements Runnable {
         paddle.setColor(colorList[paddleColorIndex]); 
         paddle.setShapeType(paddleShapeIndex);
         
-        ball = new Ball(WIDTH / 2 - 10, HEIGHT - 100);
-        applyBallSkin(); 
+        balls.clear();
+        balls.add(createBall(WIDTH / 2 - 10, HEIGHT - 100));
         mapGenerator = new MapGenerator();
         scoreManager.load();
     }
@@ -284,6 +285,7 @@ public class GamePanel extends JPanel implements Runnable {
         }
     }
     
+<<<<<<< HEAD
     public void applyBallSkin() {
         if (ball == null) return;
 
@@ -298,6 +300,60 @@ public class GamePanel extends JPanel implements Runnable {
         // 그 외의 경우(스킨 '없음'이거나, 잠긴 스킨을 선택했을 때)는 일반 공으로 설정합니다.
         ball.setSkin(null);
     }
+=======
+    public void applyBallSkin() {
+        for (Ball b : balls) {
+            applyBallSkinToBall(b);
+        }
+    }
+
+    private void applyBallSkinToBall(Ball target) {
+        if (target == null) return;
+        if (currentSkinIndex != -1 && currentSkinIndex < ballSkins.length && ballSkins[currentSkinIndex] != null) {
+            target.setSkin(ballSkins[currentSkinIndex]);
+        } else {
+            target.setSkin(null);
+        }
+    }
+
+    private Ball createBall(double x, double y) {
+        Ball newBall = new Ball(x, y);
+        applyBallSkinToBall(newBall);
+        if (slowBallActive) {
+            newBall.getVelocity().x *= SLOW_FACTOR;
+            newBall.getVelocity().y *= SLOW_FACTOR;
+        }
+        return newBall;
+    }
+
+    private Ball createBall(double x, double y, double vx, double vy) {
+        Ball newBall = new Ball(x, y);
+        newBall.setVelocity(new Vector2D(vx, vy));
+        applyBallSkinToBall(newBall);
+        return newBall;
+    }
+
+    private void spawnMultiBall(int extraCount) {
+        if (extraCount <= 0) return;
+        if (balls.isEmpty()) {
+            balls.add(createBall(WIDTH / 2 - 10, HEIGHT - 100));
+        }
+        Ball base = balls.get(0);
+        Vector2D baseVelocity = base.getVelocity();
+        double speed = baseVelocity.magnitude();
+        if (speed <= 0.01) speed = 5.0;
+        double baseAngle = Math.atan2(baseVelocity.y, baseVelocity.x);
+        double spread = Math.toRadians(20);
+        double bx = base.getPosition().x;
+        double by = base.getPosition().y;
+
+        for (int i = 0; i < extraCount; i++) {
+            double angle = baseAngle + (i % 2 == 0 ? spread : -spread);
+            Ball extra = createBall(bx, by, speed * Math.cos(angle), speed * Math.sin(angle));
+            balls.add(extra);
+        }
+    }
+>>>>>>> 93b353b80c331fc6b1ed52d3fc41e4dca564348e
     
     public void startGameWithLevel(int level) {
         currentLevel = level;
@@ -310,9 +366,8 @@ public class GamePanel extends JPanel implements Runnable {
         paddle.setColor(colorList[paddleColorIndex]);
         paddle.setShapeType(paddleShapeIndex);
         
-        ball = new Ball(WIDTH / 2 - 10, HEIGHT - 100);
-        applyBallSkin(); 
-        reapplySlowIfNeeded();
+        balls.clear();
+        balls.add(createBall(WIDTH / 2 - 10, HEIGHT - 100));
         
         if (currentLevel != 0) mapGenerator.loadLevel(currentLevel);
         else mapGenerator.bricks = levelEditor.getGeneratedBricks();
@@ -329,9 +384,8 @@ public class GamePanel extends JPanel implements Runnable {
         paddle.getPosition().x = WIDTH / 2 - 50; 
         paddle.getPosition().y = HEIGHT - 60;
         
-        ball = new Ball(WIDTH / 2 - 10, HEIGHT - 100);
-        applyBallSkin(); 
-        reapplySlowIfNeeded();
+        balls.clear();
+        balls.add(createBall(WIDTH / 2 - 10, HEIGHT - 100));
         
         powerUpManager.clear();
         comboCount = 0; 
@@ -367,6 +421,12 @@ public class GamePanel extends JPanel implements Runnable {
     public void addLifeFromShop() { lives++; }
     public void applyPierceFromShop() { activatePiercingBall(); }
     public void applyDoubleScoreFromShop() { activateDoubleScore(); }
+    public void applyBombBallFromShop() { bombBallCharges++; }
+    public void applyMultiBallFromShop() {
+        int targetCount = 3;
+        int toAdd = Math.max(0, targetCount - balls.size());
+        spawnMultiBall(toAdd);
+    }
     public MouseHandler getMouseHandler() { return mouseHandler; }
     public SoundManager getSoundManager() { return soundManager; }
     public String applyLuckyDrawFromShop() {
@@ -412,28 +472,23 @@ public class GamePanel extends JPanel implements Runnable {
     }
     
     private void activateSlowBall() {
-        if (ball != null && !slowBallActive) {
-            ball.getVelocity().x *= SLOW_FACTOR;
-            ball.getVelocity().y *= SLOW_FACTOR;
+        if (!slowBallActive) {
+            for (Ball b : balls) {
+                b.getVelocity().x *= SLOW_FACTOR;
+                b.getVelocity().y *= SLOW_FACTOR;
+            }
         }
         slowBallActive = true;
         slowBallTimer = SLOW_DURATION;
     }
     
     private void disableSlowBall() {
-        if (ball != null) {
-            ball.getVelocity().x /= SLOW_FACTOR;
-            ball.getVelocity().y /= SLOW_FACTOR;
+        for (Ball b : balls) {
+            b.getVelocity().x /= SLOW_FACTOR;
+            b.getVelocity().y /= SLOW_FACTOR;
         }
         slowBallActive = false;
         slowBallTimer = 0;
-    }
-    
-    private void reapplySlowIfNeeded() {
-        if (slowBallActive && ball != null) {
-            ball.getVelocity().x *= SLOW_FACTOR;
-            ball.getVelocity().y *= SLOW_FACTOR;
-        }
     }
     
     private void clearPowerStates() {
@@ -441,6 +496,7 @@ public class GamePanel extends JPanel implements Runnable {
         doubleScoreTimer = 0;
         piercingActive = false;
         piercingTimer = 0;
+        bombBallCharges = 0;
         if (slowBallActive) {
             disableSlowBall();
         } else {
@@ -566,7 +622,6 @@ public class GamePanel extends JPanel implements Runnable {
                     achBackButton.update(mouseHandler);
                     if(achBackButton.isClicked(mouseHandler)) transitionTo(STATE_USER_CUSTOM);
                     break;
-                // ★ 이름 입력 상태 업데이트 로직 추가
                 case STATE_NAME_INPUT:
                     if (nameModal != null) {
                         nameModal.update(mouseHandler, soundManager);
@@ -574,7 +629,7 @@ public class GamePanel extends JPanel implements Runnable {
                             if (!nameModal.isCancelled()) {
                                 scoreManager.addScore(nameModal.getInputName(), score);
                             }
-                            transitionTo(STATE_LEADERBOARD); // 입력 완료 후 랭킹으로 이동
+                            transitionTo(STATE_LEADERBOARD); 
                             nameModal = null;
                         }
                     }
@@ -623,9 +678,11 @@ public class GamePanel extends JPanel implements Runnable {
     private void updatePlay() {
         tickPowerTimers();
         paddle.update();
-        ball.update();
-
-        CollisionDetector.handleWallCollision(ball, 0, 0, WIDTH, HEIGHT, soundManager);
+        for (int i = 0; i < balls.size(); i++) {
+            Ball activeBall = balls.get(i);
+            activeBall.update();
+            CollisionDetector.handleWallCollision(activeBall, 0, 0, WIDTH, HEIGHT, soundManager);
+        }
         
         if (inputManager.escape && !wasEscPressed) {
             soundManager.playClickSound(); gameState = STATE_PAUSED; wasEscPressed = true; return;
@@ -633,9 +690,65 @@ public class GamePanel extends JPanel implements Runnable {
         
         powerUpManager.update(this, paddle);
         
-        if (CollisionDetector.isColliding(ball, paddle)) {
-            CollisionDetector.handlePaddleCollision(ball, paddle);
+        for (int i = 0; i < balls.size(); i++) {
+            Ball activeBall = balls.get(i);
+            if (CollisionDetector.isColliding(activeBall, paddle)) {
+                CollisionDetector.handlePaddleCollision(activeBall, paddle);
 
+                if (activeBall.getVelocity().y < 0) { 
+                    startShake(5);
+                    soundManager.playHitSound();
+                    comboCount = 0; 
+                }
+            }
+            
+            for (Brick brick : mapGenerator.bricks) {
+                if (!brick.isDestroyed) {
+                    if (activeBall.getBounds().intersects(brick.getBounds())) {
+                        if (!piercingActive) {
+                            CollisionDetector.resolveBallVsRect(activeBall, brick);
+                        }
+                        brick.hit();
+                        boolean bombTriggered = false;
+                        if (bombBallCharges > 0) {
+                            bombBallCharges--;
+                            triggerExplosion(brick);
+                            effectManager.createExplosion(brick.getPosition().x+40, brick.getPosition().y+15, brick.color);
+                            bombTriggered = true;
+                        }
+                        
+                        comboCount++;
+                        comboScale = 2.0f + (comboCount * 0.1f); 
+                        if (comboScale > 3.0f) comboScale = 3.0f;
+                        
+                        int bonus = (comboCount > 1) ? (comboCount * 10) : 0;
+                        addScoreWithMultiplier(brick.scoreValue + bonus);
+                        
+                        achievementManager.unlock("첫 걸음");
+
+                        if (score >= 10000){
+                            achievementManager.unlock("고득점자");
+                        }
+
+                        if (brick.isDestroyed) {
+                            soundManager.playExplodeSound();
+                            if (brick instanceof breakout.entity.ExplosiveBrick && !bombTriggered) triggerExplosion(brick);
+                            effectManager.createExplosion(brick.getPosition().x+40, brick.getPosition().y+15, brick.color);
+                            powerUpManager.maybeSpawn(brick.getPosition().x+40, brick.getPosition().y+15);
+                            startShake(15 + Math.min(comboCount, 10)); 
+                        } else {
+                            soundManager.playHitSound();
+                            startShake(5);
+                        }
+                        if (!piercingActive) {
+                            break; 
+                        }
+                    }
+                }
+            }
+        }
+
+<<<<<<< HEAD
             if (ball.getVelocity().y < 0) { 
                 startShake(5);
                 soundManager.playHitSound();
@@ -645,6 +758,10 @@ public class GamePanel extends JPanel implements Runnable {
         
         for (Brick brick : mapGenerator.bricks) {
             if (!brick.isDestroyed) {
+                
+                // ★ [중요] 벽돌 상태 업데이트 (움직임 반영)
+                brick.update(); 
+                
                 if (ball.getBounds().intersects(brick.getBounds())) {
                     if (!piercingActive) {
                         CollisionDetector.resolveBallVsRect(ball, brick);
@@ -665,9 +782,20 @@ public class GamePanel extends JPanel implements Runnable {
 
                     if (brick.isDestroyed) {
                         soundManager.playExplodeSound();
+                        
+                        double cx = brick.getPosition().x + brick.getWidth() / 2;
+                        double cy = brick.getPosition().y + brick.getHeight() / 2;
+                        
+                        effectManager.createExplosion(cx, cy, brick.color);
+                        
+                        int totalScore = brick.scoreValue + (comboCount > 1 ? comboCount * 10 : 0);
+                        String text = "+" + totalScore;
+                        if (comboCount > 1) text += " (Combo!)";
+                        effectManager.addFloatingText(cx, cy - 20, text, Color.YELLOW);
+
                         if (brick instanceof breakout.entity.ExplosiveBrick) triggerExplosion(brick);
-                        effectManager.createExplosion(brick.getPosition().x+40, brick.getPosition().y+15, brick.color);
-                        powerUpManager.maybeSpawn(brick.getPosition().x+40, brick.getPosition().y+15);
+                        
+                        powerUpManager.maybeSpawn(cx, cy);
                         startShake(15 + Math.min(comboCount, 10)); 
                     } else {
                         soundManager.playHitSound();
@@ -692,6 +820,27 @@ public class GamePanel extends JPanel implements Runnable {
                 promptAndAddScore(score);
             }
         }
+=======
+        boolean removedAnyBall = false;
+        for (int i = balls.size() - 1; i >= 0; i--) {
+            if (balls.get(i).getPosition().y > HEIGHT) {
+                balls.remove(i);
+                removedAnyBall = true;
+            }
+        }
+        if (removedAnyBall && balls.isEmpty()) {
+            lives--;
+            startShake(20);
+            if (lives > 0) {
+                soundManager.playFailSound();
+                resetRound(); 
+            } else {
+                soundManager.playFailSound();
+                gameState = STATE_GAME_OVER;
+                promptAndAddScore(score);
+            }
+        }
+>>>>>>> 8c4e4b2986c2e61dc18bf8314574bb408fae76f2
         long remainingBricks = mapGenerator.bricks.stream().filter(b -> !b.isDestroyed).count();
         if (remainingBricks == 0) {
             if (lives == 3) {
@@ -706,13 +855,10 @@ public class GamePanel extends JPanel implements Runnable {
         }
     }
     
-    // ★ JOptionPane 대체 메서드 수정
     private void promptAndAddScore(int score) {
         if (!scoreManager.isHighScore(score)) return;
-        
-        // 커스텀 모달 생성
         nameModal = new NameInputModal(WIDTH/2 - 200, HEIGHT/2 - 100, 400, 200);
-        gameState = STATE_NAME_INPUT; // 상태 변경
+        gameState = STATE_NAME_INPUT;
     }
     
     private void updateResult() {
@@ -817,19 +963,23 @@ public class GamePanel extends JPanel implements Runnable {
                 break;
             case STATE_PLAY:
                 mapGenerator.draw(dbg); paddle.draw(dbg); 
-                dbg.setColor(colorList[ballColorIndex]); ball.draw(dbg); 
+                dbg.setColor(colorList[ballColorIndex]);
+                for (Ball b : balls) { b.draw(dbg); }
                 effectManager.draw(dbg); powerUpManager.draw(dbg); drawHUD(dbg); break;
             case STATE_PAUSED:
                 mapGenerator.draw(dbg); paddle.draw(dbg); 
-                dbg.setColor(colorList[ballColorIndex]); ball.draw(dbg); 
+                dbg.setColor(colorList[ballColorIndex]);
+                for (Ball b : balls) { b.draw(dbg); }
                 if (pausePanel != null) pausePanel.draw(dbg, customFont); break;
             case STATE_GAME_OVER:
                 mapGenerator.draw(dbg); paddle.draw(dbg); 
-                dbg.setColor(colorList[ballColorIndex]); ball.draw(dbg); 
+                dbg.setColor(colorList[ballColorIndex]);
+                for (Ball b : balls) { b.draw(dbg); }
                 effectManager.draw(dbg); drawResult(dbg, "GAME OVER", Color.RED); break;
             case STATE_VICTORY:
                 mapGenerator.draw(dbg); paddle.draw(dbg); 
-                dbg.setColor(colorList[ballColorIndex]); ball.draw(dbg); 
+                dbg.setColor(colorList[ballColorIndex]);
+                for (Ball b : balls) { b.draw(dbg); }
                 effectManager.draw(dbg); drawResult(dbg, "STAGE CLEAR!", Color.GREEN); break;
             case STATE_SETTINGS: 
                 if (settingsPanel != null) settingsPanel.draw(dbg, customFont); 
@@ -841,7 +991,6 @@ public class GamePanel extends JPanel implements Runnable {
             case STATE_ACHIEVEMENTS:
                 drawAchievements(dbg);
                 break;
-            // ★ 이름 입력 화면 그리기 로직 추가
             case STATE_NAME_INPUT: 
                 if (nameModal != null) nameModal.draw(dbg, customFont); 
                 break;
@@ -987,6 +1136,7 @@ public class GamePanel extends JPanel implements Runnable {
         if (doubleScoreActive) status.add("2x SCORE " + formatTimer(doubleScoreTimer));
         if (piercingActive) status.add("PIERCE " + formatTimer(piercingTimer));
         if (slowBallActive) status.add("SLOW " + formatTimer(slowBallTimer));
+        if (bombBallCharges > 0) status.add("BOMB x" + bombBallCharges);
         if (status.isEmpty()) return;
         
         String text = String.join("  |  ", status);
@@ -1075,6 +1225,7 @@ public class GamePanel extends JPanel implements Runnable {
     public Color getCurrentBallColor() {
         return colorList[ballColorIndex];
     }
+<<<<<<< HEAD
 
     public boolean isSkinUnlocked(int skinIndex) {
         if (skinIndex == -1) return true; // '없음'은 항상 해금
@@ -1093,3 +1244,6 @@ public class GamePanel extends JPanel implements Runnable {
         }
     }
 }
+=======
+}
+>>>>>>> 93b353b80c331fc6b1ed52d3fc41e4dca564348e
