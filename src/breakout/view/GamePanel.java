@@ -309,6 +309,9 @@ public class GamePanel extends JPanel implements Runnable {
     public void addLifeFromShop() { lives++; }
     public MouseHandler getMouseHandler() { return mouseHandler; }
 
+    public SoundManager getSoundManager() {
+    return soundManager;
+    }
     @Override
     public void run() {
         double drawInterval = 1000000000 / FPS;
@@ -388,17 +391,21 @@ public class GamePanel extends JPanel implements Runnable {
     }
     
     private void updatePlay() {
+        paddle.update();
+        ball.update();
+
+        CollisionDetector.handleWallCollision(ball, 0, 0, WIDTH, HEIGHT, soundManager);
+        
         if (inputManager.escape && !wasEscPressed) {
             soundManager.playClickSound(); gameState = STATE_PAUSED; wasEscPressed = true; return;
         }
         if (!inputManager.escape) wasEscPressed = false;
         
-        paddle.update();
-        ball.update();
         powerUpManager.update(this, paddle);
         
         if (CollisionDetector.isColliding(ball, paddle)) {
             CollisionDetector.handlePaddleCollision(ball, paddle);
+
             if (ball.getVelocity().y < 0) { 
                 startShake(5);
                 soundManager.playHitSound();

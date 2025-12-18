@@ -8,6 +8,7 @@ import breakout.entity.Brick;
 import breakout.entity.GameObject;
 import breakout.entity.Paddle;
 import breakout.entity.Collidable;
+import breakout.manager.SoundManager;
 
 public final class CollisionDetector {
 
@@ -18,15 +19,40 @@ public final class CollisionDetector {
         return a.getBounds().intersects(b.getBounds());
     }
 
-    public static void handleWallCollision(Ball ball, int minX, int minY, int maxX, int maxY) {
+    public static void handleWallCollision(Ball ball, int minX, int minY, int maxX, int maxY, SoundManager soundManager) {
         if (ball == null) return;
-        Rectangle b = ball.getBounds();
-        Vector2D v = ball.getVelocity();
 
-        if (b.x <= minX && v.x < 0) { v.x = -v.x; ball.getPosition().x = minX; }
-        else if (b.x + b.width >= maxX && v.x > 0) { v.x = -v.x; ball.getPosition().x = maxX - b.width; }
-        if (b.y <= minY && v.y < 0) { v.y = -v.y; ball.getPosition().y = minY; }
-    }
+        double x = ball.getPosition().x;
+        double y = ball.getPosition().y;
+        double w = ball.getBounds().getWidth();
+        Vector2D v = ball.getVelocity();
+        boolean hit = false;
+
+        // 좌측 벽: 왼쪽으로 가고 있을 때만 체크
+             if (x <= minX && v.x < 0) { 
+                v.x = Math.abs(v.x); // 강제로 오른쪽(+) 방향으로 설정 (이중 반사 방지)
+                ball.getPosition().x = minX; 
+                hit = true;
+            } 
+    // 우측 벽: 오른쪽으로 가고 있을 때만 체크
+            else if (x + w >= maxX && v.x > 0) { 
+                v.x = -Math.abs(v.x); // 강제로 왼쪽(-) 방향으로 설정
+                ball.getPosition().x = maxX - w; 
+                hit = true;
+            }
+    
+    // 상단 벽: 위로 가고 있을 때만 체크
+            if (y <= minY && v.y < 0) { 
+                v.y = Math.abs(v.y); // 강제로 아래(+) 방향으로 설정
+                ball.getPosition().y = minY; 
+                hit = true;
+            }
+
+    // 충돌이 발생했을 때만 소리 재생
+            if (hit && soundManager != null) {
+             soundManager.playWallSound();
+             }
+     }
 
     public static void handlePaddleCollision(Ball ball, Paddle paddle) {
         if (ball == null || paddle == null) return;
