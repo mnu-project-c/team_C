@@ -667,7 +667,6 @@ public class GamePanel extends JPanel implements Runnable {
         g2.setColor(Color.RED); g2.fillOval(x, y, 10, 10); g2.fillOval(x + 10, y, 10, 10); 
         int[] xp = {x, x + 10, x + 20}; int[] yp = {y + 5, y + 20, y + 5}; g2.fillPolygon(xp, yp, 3);
     }
-    
 
     
     private void drawResult(Graphics2D g2, String title, Color color) {

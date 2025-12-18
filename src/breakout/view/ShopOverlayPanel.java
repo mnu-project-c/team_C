@@ -4,6 +4,9 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.Toolkit;
+import java.io.File;
 
 import javax.swing.JPanel;
 
@@ -22,11 +25,23 @@ public class ShopOverlayPanel extends JPanel {
 
     private String msg = "";
     private int msgTimer = 0;
+    
+    private Image shopBgImage;
 
     public ShopOverlayPanel(GamePanel gamePanel) {
         this.gamePanel = gamePanel;
         setOpaque(false);
         setFocusable(true);
+        
+        // 상점 배경 이미지 로드 (shop_bg.jpg)
+        try {
+            File file = new File("assets/shop_bg.jpg");
+            if (file.exists()) {
+                shopBgImage = Toolkit.getDefaultToolkit().createImage(file.getAbsolutePath());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         int centerX = GamePanel.WIDTH / 2 - 100;
 
@@ -34,6 +49,12 @@ public class ShopOverlayPanel extends JPanel {
         buySlowBtn   = new GameButton(centerX, 310, 200, 50, "SLOW BALL - " + SLOW_PRICE);
         buyLifeBtn   = new GameButton(centerX, 380, 200, 50, "EXTRA LIFE - " + LIFE_PRICE);
         backBtn      = new GameButton(centerX, 470, 200, 50, "BACK");
+        
+        // ★ 버튼 반투명 모드 활성화 (평소엔 투명, 마우스 올리면 선명)
+        buyPaddleBtn.setSemiTransparentMode(true);
+        buySlowBtn.setSemiTransparentMode(true);
+        buyLifeBtn.setSemiTransparentMode(true);
+        backBtn.setSemiTransparentMode(true);
     }
 
     public void setOnClose(Runnable onClose) {
@@ -41,7 +62,6 @@ public class ShopOverlayPanel extends JPanel {
     }
 
     public void refreshTexts() {
-        // 필요하면 버튼 텍스트 갱신하는 방식으로 확장 가능
         msg = "";
         msgTimer = 0;
         repaint();
@@ -57,7 +77,7 @@ public class ShopOverlayPanel extends JPanel {
         buyLifeBtn.update(mouseHandler);
         backBtn.update(mouseHandler);
 
-        // 구매
+        // 구매 로직
         if (buyPaddleBtn.isClicked(mouseHandler)) {
             if (gamePanel.getScore() >= PADDLE_PRICE) {
                 gamePanel.spendScore(PADDLE_PRICE);
@@ -85,6 +105,8 @@ public class ShopOverlayPanel extends JPanel {
         if (backBtn.isClicked(mouseHandler)) {
             if (onClose != null) onClose.run();
         }
+        
+        repaint();
     }
 
     private void showMsg(String m) {
@@ -99,19 +121,37 @@ public class ShopOverlayPanel extends JPanel {
 
         Graphics2D g2 = (Graphics2D) g;
 
-        // 반투명 배경
-        g2.setColor(new Color(0, 0, 0, 180));
-        g2.fillRect(0, 0, getWidth(), getHeight());
+        // 배경 그리기
+        if (shopBgImage != null) {
+            g2.drawImage(shopBgImage, 0, 0, getWidth(), getHeight(), this);
+        } else {
+            g2.setColor(new Color(0, 0, 0, 180));
+            g2.fillRect(0, 0, getWidth(), getHeight());
+        }
 
-        // 타이틀/점수
-        g2.setColor(Color.WHITE);
-        g2.setFont(new Font("Consolas", Font.BOLD, 42));
-        drawCentered(g2, "SHOP", GamePanel.WIDTH / 2, 140);
+        // ★ 1. 타이틀: "SSAGAL STORE" (3D 스타일, 정열적인 빨강)
+        g2.setFont(new Font("Consolas", Font.BOLD, 50));
+        
+        String title = "SSAGAL STORE";
+        int titleX = GamePanel.WIDTH / 2;
+        int titleY = 140;
 
-        g2.setFont(new Font("Consolas", Font.BOLD, 24));
+        // 그림자 (검붉은색으로 여러 겹 그려 입체감 표현)
+        g2.setColor(new Color(100, 0, 0));
+        for (int i = 5; i > 0; i--) {
+            drawCentered(g2, title, titleX + i, titleY + i);
+        }
+        
+        // 메인 텍스트 (정열적인 빨강)
+        g2.setColor(Color.RED);
+        drawCentered(g2, title, titleX, titleY);
+
+        // ★ 2. 점수: "SCORE" (골드 색상)
+        g2.setFont(new Font("Consolas", Font.BOLD, 28));
+        g2.setColor(new Color(255, 215, 0)); // Gold Color
         drawCentered(g2, "SCORE: " + gamePanel.getScore(), GamePanel.WIDTH / 2, 190);
 
-        // 버튼들
+        // 버튼들 그리기
         Font btnFont = new Font("Consolas", Font.BOLD, 24);
 
         buyPaddleBtn.draw(g2, btnFont);
@@ -119,7 +159,7 @@ public class ShopOverlayPanel extends JPanel {
         buyLifeBtn.draw(g2, btnFont);
         backBtn.draw(g2, btnFont);
 
-        // 메시지
+        // 메시지 표시
         if (msgTimer > 0 && msg != null && !msg.isEmpty()) {
             g2.setColor(Color.YELLOW);
             g2.setFont(new Font("Consolas", Font.BOLD, 22));
