@@ -358,7 +358,6 @@ public class GamePanel extends JPanel implements Runnable {
     public void applyDoubleScoreFromShop() { activateDoubleScore(); }
     public MouseHandler getMouseHandler() { return mouseHandler; }
     public SoundManager getSoundManager() { return soundManager; }
-
     public String applyLuckyDrawFromShop() {
         LuckyPrize prize = rollLuckyPrize();
         switch (prize) {

@@ -106,6 +106,7 @@ public class Ball extends GameObject {
             g.fillOval((int)position.x, (int)position.y, (int)width, (int)height);
         }
     }
+
     
     // ★ [추가] 이 메서드가 없어서 오류가 났던 거야!
     @Override
