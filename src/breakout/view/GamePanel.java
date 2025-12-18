@@ -138,7 +138,7 @@ public class GamePanel extends JPanel implements Runnable {
             @Override
             public void keyTyped(java.awt.event.KeyEvent e) {
                 if (gameState == STATE_NAME_INPUT && nameModal != null) {
-                    nameModal.handleKeyTyped(e);
+                    nameModal.handleKeyTyped(e); // 한글/특수문자 포함 실제 문자 처리
                     repaint();
                 }
             }

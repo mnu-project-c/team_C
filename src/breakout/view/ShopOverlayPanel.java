@@ -17,11 +17,14 @@ public class ShopOverlayPanel extends JPanel {
     private final GamePanel gamePanel;
     private Runnable onClose = null;
 
-    private GameButton buyPaddleBtn, buySlowBtn, buyLifeBtn, backBtn;
+    private GameButton buyPaddleBtn, buySlowBtn, buyLifeBtn, buyPierceBtn, buyDoubleBtn, buyLuckyBtn, backBtn;
 
     private static final int PADDLE_PRICE = 200;
     private static final int SLOW_PRICE   = 150;
     private static final int LIFE_PRICE   = 300;
+    private static final int PIERCE_PRICE = 220;
+    private static final int DOUBLE_PRICE = 200;
+    private static final int LUCKY_PRICE  = 250;
 
     private String msg = "";
     private int msgTimer = 0;
@@ -43,17 +46,26 @@ public class ShopOverlayPanel extends JPanel {
             e.printStackTrace();
         }
 
-        int centerX = GamePanel.WIDTH / 2 - 100;
+        int colGap = 40;
+        int rowGap = 65;
+        int startY = 200;
+        int col1X = GamePanel.WIDTH / 2 - 220;
+        int col2X = GamePanel.WIDTH / 2 + 20;
 
-        buyPaddleBtn = new GameButton(centerX, 240, 200, 50, "커져라~! >>> " + PADDLE_PRICE);
-        buySlowBtn   = new GameButton(centerX, 310, 200, 50, "스! 노우볼 >>> " + SLOW_PRICE);
-        buyLifeBtn   = new GameButton(centerX, 380, 200, 50, "체력 업! >>> " + LIFE_PRICE);
-        backBtn      = new GameButton(centerX, 470, 200, 50, "뒤로");
-        
-        
+        buyPaddleBtn = new GameButton(col1X, startY, 200, 50, "커져라! >>> " + PADDLE_PRICE);
+        buySlowBtn   = new GameButton(col2X, startY, 200, 50, "볼 슬로우 >>> " + SLOW_PRICE);
+        buyLifeBtn   = new GameButton(col1X, startY + rowGap, 200, 50, "하트 추가 >>> " + LIFE_PRICE);
+        buyPierceBtn = new GameButton(col2X, startY + rowGap, 200, 50, "관통 볼 10초 >>> " + PIERCE_PRICE);
+        buyDoubleBtn = new GameButton(col1X, startY + rowGap * 2, 200, 50, "더블 스코어 >>> " + DOUBLE_PRICE);
+        buyLuckyBtn  = new GameButton(col2X, startY + rowGap * 2, 200, 50, "럭키 드로우 >>> " + LUCKY_PRICE);
+        backBtn      = new GameButton(GamePanel.WIDTH / 2 - 100, startY + rowGap * 3 + 10, 200, 50, "뒤로");
+
         buyPaddleBtn.setSemiTransparentMode(true);
         buySlowBtn.setSemiTransparentMode(true);
         buyLifeBtn.setSemiTransparentMode(true);
+        buyPierceBtn.setSemiTransparentMode(true);
+        buyDoubleBtn.setSemiTransparentMode(true);
+        buyLuckyBtn.setSemiTransparentMode(true);
         backBtn.setSemiTransparentMode(true);
     }
 
@@ -75,6 +87,9 @@ public class ShopOverlayPanel extends JPanel {
         buyPaddleBtn.update(mouseHandler);
         buySlowBtn.update(mouseHandler);
         buyLifeBtn.update(mouseHandler);
+        buyPierceBtn.update(mouseHandler);
+        buyDoubleBtn.update(mouseHandler);
+        buyLuckyBtn.update(mouseHandler);
         backBtn.update(mouseHandler);
 
         
@@ -99,6 +114,30 @@ public class ShopOverlayPanel extends JPanel {
                 gamePanel.spendScore(LIFE_PRICE);
                 gamePanel.addLifeFromShop();
                 showMsg("하트 +1!");
+            } else showMsg("점수가 모자라요!");
+        }
+        
+        if (buyPierceBtn.isClicked(mouseHandler)) {
+            if (gamePanel.getScore() >= PIERCE_PRICE) {
+                gamePanel.spendScore(PIERCE_PRICE);
+                gamePanel.applyPierceFromShop();
+                showMsg("관통 볼 10초!");
+            } else showMsg("점수가 모자라요!");
+        }
+        
+        if (buyDoubleBtn.isClicked(mouseHandler)) {
+            if (gamePanel.getScore() >= DOUBLE_PRICE) {
+                gamePanel.spendScore(DOUBLE_PRICE);
+                gamePanel.applyDoubleScoreFromShop();
+                showMsg("더블 스코어 15초!");
+            } else showMsg("점수가 모자라요!");
+        }
+        
+        if (buyLuckyBtn.isClicked(mouseHandler)) {
+            if (gamePanel.getScore() >= LUCKY_PRICE) {
+                gamePanel.spendScore(LUCKY_PRICE);
+                String result = gamePanel.applyLuckyDrawFromShop();
+                showMsg(result);
             } else showMsg("점수가 모자라요!");
         }
 
@@ -151,12 +190,15 @@ public class ShopOverlayPanel extends JPanel {
         g2.setColor(new Color(255, 215, 0)); // Gold Color
         drawCentered(g2, "SCORE: " + gamePanel.getScore(), GamePanel.WIDTH / 2, 190);
 
-        
+
         Font btnFont = new Font("SansSerif", Font.BOLD, 24);
 
         buyPaddleBtn.draw(g2, btnFont);
         buySlowBtn.draw(g2, btnFont);
         buyLifeBtn.draw(g2, btnFont);
+        buyPierceBtn.draw(g2, btnFont);
+        buyDoubleBtn.draw(g2, btnFont);
+        buyLuckyBtn.draw(g2, btnFont);
         backBtn.draw(g2, btnFont);
 
         
