@@ -36,6 +36,7 @@ public class PowerUpManager {
 
             // 1. 패들과 충돌 체크
             if (p.getBounds().intersects(paddle.getBounds())) {
+                game.getSoundManager().playPowerupSound();
                 p.applyEffect(game); // 효과 적용
                 it.remove(); // 아이템 제거
                 continue;

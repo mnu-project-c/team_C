@@ -35,9 +35,9 @@ public class Ball extends GameObject {
         position.x += velocity.x;
         position.y += velocity.y;
 
-        if (position.x < 0) { position.x = 0; velocity.x = -velocity.x; }
-        if (position.x > GamePanel.WIDTH - width) { position.x = GamePanel.WIDTH - width; velocity.x = -velocity.x; }
-        if (position.y < 0) { position.y = 0; velocity.y = -velocity.y; }
+       // if (position.x < 0) { position.x = 0; velocity.x = -velocity.x; }
+       // if (position.x > GamePanel.WIDTH - width) { position.x = GamePanel.WIDTH - width; velocity.x = -velocity.x; }
+       // if (position.y < 0) { position.y = 0; velocity.y = -velocity.y; }
     }
 
     @Override

@@ -15,11 +15,16 @@ public class SoundManager {
 
     private static final String SOUND_PATH = "assets/";
     
-    // [수정] 실제 에셋 파일명인 "Bgm.wav"로 매칭
+    
     public static final String SOUND_HIT = "hit.wav"; 
     public static final String SOUND_FAIL = "Fail.wav"; 
     public static final String SOUND_EXPLODE = "explode.wav"; 
-    public static final String SOUND_CLICK = "click.wav";     
+    public static final String SOUND_CLICK = "click.wav"; 
+    public static final String SOUND_VICTORY = "victory.wav";
+    public static final String SOUND_POWERUP = "powerup.wav";
+    public static final String SOUND_WALL    = "hit.wav";
+    public static final String SOUND_BUY     = "buy.wav";
+    public static final String SOUND_ERROR   = "error.wav";    
 
     private Map<String, Clip> clipCache;
     private Clip currentBgmClip;
@@ -51,6 +56,11 @@ public class SoundManager {
     public void playFailSound() { playSound(SOUND_FAIL); } 
     public void playExplodeSound() { playSound(SOUND_EXPLODE); } 
     public void playClickSound() { playSound(SOUND_CLICK); }
+    public void playVictorySound() { playSound(SOUND_VICTORY); }
+    public void playPowerupSound() { playSound(SOUND_POWERUP); }
+    public void playWallSound()    { playSound(SOUND_WALL); }
+    public void playBuySound()     { playSound(SOUND_BUY); }
+    public void playErrorSound()   { playSound(SOUND_ERROR); }
 
     public void playSound(String fileName) {
         if (isMuted) return;
