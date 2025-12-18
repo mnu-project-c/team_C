@@ -10,6 +10,7 @@ import java.awt.Rectangle; // ★ Rectangle import 확인
 import java.awt.RenderingHints;
 
 import breakout.manager.MouseHandler;
+import breakout.manager.SoundManager;
 
 public class GameButton {
     
@@ -36,6 +37,8 @@ public class GameButton {
     public boolean isClicked(MouseHandler mouse) {
         if (isHovered && mouse.isPressed) {
             mouse.isPressed = false;
+            // 중앙에서 클릭 사운드를 재생하도록 처리하여, 버튼 클릭시 항상 소리가 나게 함
+            try { SoundManager.playClick(); } catch (Exception e) {}
             return true;
         }
         return false;
