@@ -15,14 +15,14 @@ import breakout.manager.MouseHandler;
 import breakout.manager.SoundManager;
 
 public class GameButton {
-    
+
     public Rectangle bounds;
     public String text;
     private boolean isHovered = false;
-    
+
     // 반투명 모드 플래그
     private boolean semiTransparentMode = false;
-    
+
     private final Color goldMain = new Color(255, 215, 0);
     private final Color goldDark = new Color(184, 134, 11);
 
@@ -30,12 +30,11 @@ public class GameButton {
         this.bounds = new Rectangle(x, y, width, height);
         this.text = text;
     }
-    
-    // ★ [추가] 이 메서드가 없어서 오류가 났던 거야!
+
     public void setText(String text) {
         this.text = text;
     }
-    
+
     // 반투명 모드 설정 메소드
     public void setSemiTransparentMode(boolean enable) {
         this.semiTransparentMode = enable;
@@ -52,17 +51,25 @@ public class GameButton {
     public boolean isClicked(MouseHandler mouse) {
         if (isHovered && mouse.isPressed) {
             mouse.isPressed = false;
-            try { SoundManager.playClick(); } catch (Exception e) {}
+            
+            try {
+                SoundManager.playClick();
+            } catch (Exception e) {
+                // 사운드 재생 실패 시 예외 처리 블록
+            }
+            
             return true;
         }
+        
         return false;
     }
 
     public void draw(Graphics2D g, Font customFont) {
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        
+
         // 반투명 처리 로직 (AlphaComposite 사용)
         Composite originalComposite = g.getComposite();
+        
         if (semiTransparentMode && !isHovered) {
             // 마우스가 올라가지 않았을 때 반투명 (50%)
             g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
@@ -70,51 +77,82 @@ public class GameButton {
             // 마우스가 올라갔거나 기본 모드일 때 불투명 (100%)
             g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
         }
-        
-        // 1. 버튼 배경
+
+        // 1. 버튼 배경 그라데이션 설정
         GradientPaint gp;
         if (isHovered) {
-            gp = new GradientPaint(bounds.x, bounds.y, Color.WHITE, bounds.x, bounds.y + bounds.height, goldMain);
+            gp = new GradientPaint(
+                    bounds.x, bounds.y, Color.WHITE, 
+                    bounds.x, bounds.y + bounds.height, goldMain
+            );
         } else {
-            gp = new GradientPaint(bounds.x, bounds.y, goldMain, bounds.x, bounds.y + bounds.height, goldDark);
+            gp = new GradientPaint(
+                    bounds.x, bounds.y, goldMain, 
+                    bounds.x, bounds.y + bounds.height, goldDark
+            );
         }
+        
         g.setPaint(gp);
         g.fillRoundRect(bounds.x, bounds.y, bounds.width, bounds.height, 15, 15);
-        
-        // 2. 하이라이트
-        g.setColor(new Color(255, 255, 255, 100));
-        g.fillRoundRect(bounds.x + 5, bounds.y + 5, bounds.width - 10, bounds.height / 2 - 5, 10, 10);
 
-        // 3. 테두리
+        // 2. 상단 하이라이트 효과
+        g.setColor(new Color(255, 255, 255, 100));
+        g.fillRoundRect(
+                bounds.x + 5, 
+                bounds.y + 5, 
+                bounds.width - 10, 
+                bounds.height / 2 - 5, 
+                10, 
+                10
+        );
+
+        // 3. 테두리 그리기
         g.setStroke(new BasicStroke(3));
-        g.setColor(new Color(255, 255, 220)); 
+        g.setColor(new Color(255, 255, 220));
         g.drawRoundRect(bounds.x, bounds.y, bounds.width, bounds.height, 15, 15);
-        
-        // 4. 텍스트
+
+        // 4. 폰트 설정
         if (customFont != null) {
             g.setFont(customFont.deriveFont(Font.BOLD, 20f));
         } else {
             g.setFont(new Font("SansSerif", Font.BOLD, 20));
         }
-        
-        g.setColor(new Color(100, 70, 0)); 
-        drawCenteredString(g, text, bounds.x + bounds.width / 2 + 1, bounds.y + bounds.height / 2 + 1);
-        
-        if (isHovered) g.setColor(new Color(139, 69, 19));
-        else g.setColor(Color.WHITE);
-        
-        drawCenteredString(g, text, bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
-        
-        // Composite 복구
+
+        // 5. 텍스트 그림자 효과
+        g.setColor(new Color(100, 70, 0));
+        drawCenteredString(
+                g, 
+                text, 
+                bounds.x + bounds.width / 2 + 1, 
+                bounds.y + bounds.height / 2 + 1
+        );
+
+        // 6. 메인 텍스트 색상 결정 및 그리기
+        if (isHovered) {
+            g.setColor(new Color(139, 69, 19));
+        } else {
+            g.setColor(Color.WHITE);
+        }
+
+        drawCenteredString(
+                g, 
+                text, 
+                bounds.x + bounds.width / 2, 
+                bounds.y + bounds.height / 2
+        );
+
+        // 그래픽 컨텍스트 복구
         g.setComposite(originalComposite);
     }
-    
+
     private void drawCenteredString(Graphics2D g, String text, int x, int y) {
         FontMetrics fm = g.getFontMetrics();
-        int textX = x - fm.stringWidth(text) / 2;
-        int textY = y + (fm.getAscent() - fm.getDescent()) / 2;
+        int textX = x - (fm.stringWidth(text) / 2);
+        int textY = y + ((fm.getAscent() - fm.getDescent()) / 2);
+        
         g.drawString(text, textX, textY);
     }
+
     public Rectangle getBounds() {
         return bounds;
     }

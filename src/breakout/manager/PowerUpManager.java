@@ -12,14 +12,15 @@ import breakout.entity.PowerUp;
 import breakout.view.GamePanel;
 
 public class PowerUpManager {
-    
+
     private ArrayList<PowerUp> powerUps = new ArrayList<>();
     private Random random = new Random();
 
-    // 벽돌 깨질 때 호출 (20% 확률로 아이템 생성)
+    // 벽돌 파괴 시 일정 확률(20%)로 아이템 생성
     public void maybeSpawn(double x, double y) {
-        if (random.nextInt(100) < 20) { // 20% 확률
+        if (random.nextInt(100) < 20) {
             int type = random.nextInt(2);
+            
             if (type == 0) {
                 powerUps.add(new ExtraLifePowerUp(x, y));
             } else {
@@ -30,19 +31,20 @@ public class PowerUpManager {
 
     public void update(GamePanel game, Paddle paddle) {
         Iterator<PowerUp> it = powerUps.iterator();
+        
         while (it.hasNext()) {
             PowerUp p = it.next();
             p.update();
 
-            // 1. 패들과 충돌 체크
+            // 패들과의 충돌 체크 및 아이템 효과 적용
             if (p.getBounds().intersects(paddle.getBounds())) {
                 game.getSoundManager().playPowerupSound();
-                p.applyEffect(game); // 효과 적용
-                it.remove(); // 아이템 제거
+                p.applyEffect(game);
+                it.remove();
                 continue;
             }
 
-            // 2. 화면 밖으로 나가면 제거
+            // 아이템이 화면 하단 밖으로 나갈 경우 제거
             if (p.getPosition().y > GamePanel.HEIGHT) {
                 it.remove();
             }
@@ -54,7 +56,7 @@ public class PowerUpManager {
             p.draw(g);
         }
     }
-    
+
     public void clear() {
         powerUps.clear();
     }

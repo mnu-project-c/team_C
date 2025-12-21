@@ -9,6 +9,7 @@ import java.util.List;
 import breakout.manager.MouseHandler;
 
 public class LevelSelectPanel {
+
     private GamePanel panel;
     private List<GameButton> levelButtons;
     private GameButton customPlayButton, lvlBackButton;
@@ -20,15 +21,13 @@ public class LevelSelectPanel {
 
     private void initButtons() {
         levelButtons = new ArrayList<>();
-        
-        // 4x4 그리드 설정
+
         int cols = 4;
         int rows = 4;
         int btnWidth = 100;
         int btnHeight = 50;
         int gap = 20;
-        
-        // 전체 그리드 크기 계산하여 중앙 정렬
+
         int totalWidth = (cols * btnWidth) + ((cols - 1) * gap);
         int startX = (GamePanel.WIDTH - totalWidth) / 2;
         int startY = 150;
@@ -36,10 +35,10 @@ public class LevelSelectPanel {
         for (int i = 0; i < 16; i++) {
             int r = i / cols;
             int c = i % cols;
-            
+
             int x = startX + c * (btnWidth + gap);
             int y = startY + r * (btnHeight + gap);
-            
+
             levelButtons.add(new GameButton(x, y, btnWidth, btnHeight, "LV " + (i + 1)));
         }
 
@@ -49,37 +48,43 @@ public class LevelSelectPanel {
     }
 
     public boolean update(MouseHandler mouseHandler) {
-        // 1~16 레벨 버튼 업데이트 및 클릭 확인
         for (int i = 0; i < levelButtons.size(); i++) {
             GameButton btn = levelButtons.get(i);
             btn.update(mouseHandler);
+            
             if (btn.isClicked(mouseHandler)) {
-                panel.startGameWithLevel(i + 1); // 레벨 1부터 시작
+                panel.startGameWithLevel(i + 1);
                 return false;
             }
         }
 
         customPlayButton.update(mouseHandler);
         lvlBackButton.update(mouseHandler);
+
+        if (customPlayButton.isClicked(mouseHandler)) {
+            panel.startGameWithLevel(0);
+            return false;
+        }
         
-        if (customPlayButton.isClicked(mouseHandler)) { panel.startGameWithLevel(0); return false; }
-        if (lvlBackButton.isClicked(mouseHandler)) { return true; }
-        
+        if (lvlBackButton.isClicked(mouseHandler)) {
+            return true;
+        }
+
         return false;
     }
 
     public void draw(Graphics2D g2, Font customFont) {
-        g2.setColor(new Color(0, 0, 0, 150)); 
+        g2.setColor(new Color(0, 0, 0, 150));
         g2.fillRect(0, 0, GamePanel.WIDTH, GamePanel.HEIGHT);
-        
-        g2.setColor(Color.WHITE); 
+
+        g2.setColor(Color.WHITE);
         g2.setFont(new Font("Consolas", Font.BOLD, 40));
-        panel.drawCenteredString(g2, "SELECT LEVEL", GamePanel.WIDTH/2, 100);
-        
+        panel.drawCenteredString(g2, "SELECT LEVEL", GamePanel.WIDTH / 2, 100);
+
         for (GameButton btn : levelButtons) {
             btn.draw(g2, customFont);
         }
-        
+
         customPlayButton.draw(g2, customFont);
         lvlBackButton.draw(g2, customFont);
     }

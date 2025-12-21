@@ -16,50 +16,64 @@ public class ScoreManager {
 
     private static final String FILE_PATH = "highscore.txt";
     private static final int MAX_ENTRIES = 10;
-
     private List<ScoreEntry> entries = new ArrayList<>();
 
     public ScoreManager() {
         load();
     }
 
+    // 파일에서 점수 데이터 로드 및 파싱
     public void load() {
         entries.clear();
         try {
             File file = new File(FILE_PATH);
-            if (!file.exists()) return;
+            if (!file.exists()) {
+                return;
+            }
 
             StringBuilder sb = new StringBuilder();
             BufferedReader reader = new BufferedReader(new FileReader(file));
             String line;
-            while ((line = reader.readLine()) != null) sb.append(line.trim());
+            
+            while ((line = reader.readLine()) != null) {
+                sb.append(line.trim());
+            }
             reader.close();
 
             String content = sb.toString().trim();
-            if (content.isEmpty()) return;
+            if (content.isEmpty()) {
+                return;
+            }
 
             if (content.startsWith("[")) {
                 int idx = 0;
                 while (true) {
                     int objStart = content.indexOf('{', idx);
-                    if (objStart == -1) break;
+                    if (objStart == -1) {
+                        break;
+                    }
+                    
                     int objEnd = content.indexOf('}', objStart);
-                    if (objEnd == -1) break;
+                    if (objEnd == -1) {
+                        break;
+                    }
+                    
                     String obj = content.substring(objStart, objEnd + 1);
                     ScoreEntry e = ScoreEntry.fromJson(obj);
-                    if (e != null) entries.add(e);
+                    if (e != null) {
+                        entries.add(e);
+                    }
                     idx = objEnd + 1;
                 }
                 sortAndTrim();
             } else {
-                // old format: single integer
                 try {
                     int oldScore = Integer.parseInt(content);
                     entries.add(new ScoreEntry("익명", oldScore, Instant.now().toString()));
                     sortAndTrim();
-                    save(); // migrate to JSON format
+                    save();
                 } catch (NumberFormatException nfe) {
-                    // ignore corrupt file
+                    // 손상된 파일 무시
                 }
             }
         } catch (IOException e) {
@@ -69,17 +83,25 @@ public class ScoreManager {
 
     private void sortAndTrim() {
         Collections.sort(entries, Comparator.comparingInt(ScoreEntry::getScore).reversed());
-        if (entries.size() > MAX_ENTRIES) entries = new ArrayList<>(entries.subList(0, MAX_ENTRIES));
+        
+        if (entries.size() > MAX_ENTRIES) {
+            entries = new ArrayList<>(entries.subList(0, MAX_ENTRIES));
+        }
     }
 
+    // 현재 랭킹 리스트를 파일에 저장
     public void save() {
         try {
             BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_PATH));
             writer.write("[");
+            
             for (int i = 0; i < entries.size(); i++) {
-                if (i > 0) writer.write(",");
+                if (i > 0) {
+                    writer.write(",");
+                }
                 writer.write(entries.get(i).toJson());
             }
+            
             writer.write("]");
             writer.close();
         } catch (IOException e) {
@@ -88,8 +110,14 @@ public class ScoreManager {
     }
 
     public void addScore(String name, int score) {
-        if (name == null || name.trim().isEmpty()) name = "익명";
-        if (name.length() > 20) name = name.substring(0, 20);
+        if (name == null || name.trim().isEmpty()) {
+            name = "익명";
+        }
+        
+        if (name.length() > 20) {
+            name = name.substring(0, 20);
+        }
+        
         ScoreEntry e = new ScoreEntry(name, score, Instant.now().toString());
         entries.add(e);
         sortAndTrim();
@@ -97,12 +125,18 @@ public class ScoreManager {
     }
 
     public boolean isHighScore(int score) {
-        if (entries.size() < MAX_ENTRIES) return true;
+        if (entries.size() < MAX_ENTRIES) {
+            return true;
+        }
+        
         return score > entries.get(entries.size() - 1).getScore();
     }
 
     public int getHighScore() {
-        if (entries.isEmpty()) return 0;
+        if (entries.isEmpty()) {
+            return 0;
+        }
+        
         return entries.get(0).getScore();
     }
 

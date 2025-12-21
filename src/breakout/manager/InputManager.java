@@ -4,9 +4,8 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 
 public class InputManager implements KeyListener {
+
     private boolean[] keys = new boolean[256];
-    
-    // escape(ESC) 키 추가
     public boolean left, right, space, enter, escape;
 
     public void update() {
@@ -14,23 +13,24 @@ public class InputManager implements KeyListener {
         right = keys[KeyEvent.VK_RIGHT];
         space = keys[KeyEvent.VK_SPACE];
         enter = keys[KeyEvent.VK_ENTER];
-        escape = keys[KeyEvent.VK_ESCAPE]; // ESC 키 연결
+        escape = keys[KeyEvent.VK_ESCAPE];
     }
 
     @Override
     public void keyPressed(KeyEvent e) {
-        if(e.getKeyCode() < keys.length) {
+        if (e.getKeyCode() < keys.length) {
             keys[e.getKeyCode()] = true;
         }
     }
 
     @Override
     public void keyReleased(KeyEvent e) {
-        if(e.getKeyCode() < keys.length) {
+        if (e.getKeyCode() < keys.length) {
             keys[e.getKeyCode()] = false;
         }
     }
 
     @Override
-    public void keyTyped(KeyEvent e) { }
+    public void keyTyped(KeyEvent e) {
+    }
 }

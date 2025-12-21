@@ -10,7 +10,7 @@ import breakout.entity.FloatingText;
 import breakout.entity.Particle;
 
 public class EffectManager {
-    
+
     private List<Particle> particles = new ArrayList<>();
     private List<FloatingText> texts = new ArrayList<>();
 
@@ -19,7 +19,7 @@ public class EffectManager {
             particles.add(new Particle(x, y, color));
         }
     }
-    
+
     public void addFloatingText(double x, double y, String msg, Color color) {
         texts.add(new FloatingText(x, y, msg, color));
     }
@@ -29,19 +29,30 @@ public class EffectManager {
         while (pIt.hasNext()) {
             Particle p = pIt.next();
             p.update();
-            if (p.isDead()) pIt.remove();
+            
+            if (p.isDead()) {
+                pIt.remove();
+            }
         }
-        
+
         Iterator<FloatingText> tIt = texts.iterator();
         while (tIt.hasNext()) {
             FloatingText t = tIt.next();
             t.update();
-            if (t.isDead()) tIt.remove();
+            
+            if (t.isDead()) {
+                tIt.remove();
+            }
         }
     }
 
     public void draw(Graphics2D g) {
-        for (Particle p : particles) p.draw(g);
-        for (FloatingText t : texts) t.draw(g);
+        for (Particle p : particles) {
+            p.draw(g);
+        }
+
+        for (FloatingText t : texts) {
+            t.draw(g);
+        }
     }
 }

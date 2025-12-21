@@ -7,6 +7,7 @@ import java.awt.Graphics2D;
 import breakout.manager.MouseHandler;
 
 public class PausePanel {
+
     private GamePanel panel;
     private GameButton resumeButton, shopButton, pauseSettingsButton, menuButton;
 
@@ -17,6 +18,7 @@ public class PausePanel {
 
     private void initButtons() {
         int centerX = GamePanel.WIDTH / 2 - 100;
+        
         resumeButton = new GameButton(centerX, 280, 200, 50, "계속하기");
         shopButton = new GameButton(centerX, 340, 200, 50, "상점");
         pauseSettingsButton = new GameButton(centerX, 400, 200, 50, "설정");
@@ -29,24 +31,34 @@ public class PausePanel {
         pauseSettingsButton.update(mouseHandler);
         menuButton.update(mouseHandler);
 
-        if (resumeButton.isClicked(mouseHandler)) { panel.resumeFromPause(); }
-        if (shopButton.isClicked(mouseHandler)) { panel.openShop(); }
-        if (pauseSettingsButton.isClicked(mouseHandler)) { panel.openSettingsFromPause(); }
-        if (menuButton.isClicked(mouseHandler)) { panel.gotoMenuFromPause(); }
+        if (resumeButton.isClicked(mouseHandler)) {
+            panel.resumeFromPause();
+        }
+        
+        if (shopButton.isClicked(mouseHandler)) {
+            panel.openShop();
+        }
+        
+        if (pauseSettingsButton.isClicked(mouseHandler)) {
+            panel.openSettingsFromPause();
+        }
+        
+        if (menuButton.isClicked(mouseHandler)) {
+            panel.gotoMenuFromPause();
+        }
     }
 
     public void draw(Graphics2D g2, Font customFont) {
-        g2.setColor(new Color(0, 0, 0, 150)); 
+        g2.setColor(new Color(0, 0, 0, 150));
         g2.fillRect(0, 0, GamePanel.WIDTH, GamePanel.HEIGHT);
-        
-        // 문구 변경 및 색상 강조
-        g2.setColor(Color.RED); 
+
+        g2.setColor(Color.RED);
         g2.setFont(new Font("Arial", Font.BOLD | Font.ITALIC, 60));
-        panel.drawCenteredString(g2, "*COWARD*", GamePanel.WIDTH/2, 200);
-        
-        resumeButton.draw(g2, customFont); 
+        panel.drawCenteredString(g2, "*COWARD*", GamePanel.WIDTH / 2, 200);
+
+        resumeButton.draw(g2, customFont);
         shopButton.draw(g2, customFont);
-        pauseSettingsButton.draw(g2, customFont); 
-        menuButton.draw(g2, customFont); 
+        pauseSettingsButton.draw(g2, customFont);
+        menuButton.draw(g2, customFont);
     }
 }

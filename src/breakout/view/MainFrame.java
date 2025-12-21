@@ -38,8 +38,11 @@ public class MainFrame extends JFrame {
         });
 
         JLayeredPane layeredPane = new JLayeredPane();
-        layeredPane.setLayout(null); // ★ 추가
-        layeredPane.setPreferredSize(new Dimension(GamePanel.WIDTH, GamePanel.HEIGHT));
+        layeredPane.setLayout(null);
+        
+        Dimension paneSize = new Dimension(GamePanel.WIDTH, GamePanel.HEIGHT);
+        layeredPane.setPreferredSize(paneSize);
+        
         layeredPane.add(gamePanel, JLayeredPane.DEFAULT_LAYER);
         layeredPane.add(shopOverlay, JLayeredPane.MODAL_LAYER);
 
@@ -48,7 +51,10 @@ public class MainFrame extends JFrame {
         setLocationRelativeTo(null);
         setVisible(true);
 
-        SwingUtilities.invokeLater(gamePanel::requestFocusInWindow);
+        SwingUtilities.invokeLater(() -> {
+            gamePanel.requestFocusInWindow();
+        });
+        
         gamePanel.startGame();
     }
 
