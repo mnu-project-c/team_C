@@ -56,8 +56,12 @@ public class Particle extends GameObject {
         }
     }
 
-    public boolean isDead() { return alpha <= 0; }
+    public boolean isDead() { 
+        return alpha <= 0; 
+    }
     
     @Override
-    public void onCollision(Collidable other) {}
+    public void onCollision(Collidable other) {
+        
+    }
 }

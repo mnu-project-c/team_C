@@ -42,8 +42,10 @@ public class Paddle extends GameObject {
         }
 
         // 화면 밖으로 나가지 않게
-        if (position.x < 0) position.x = 0;
-        if (position.x > GamePanel.WIDTH - width) position.x = GamePanel.WIDTH - width;
+        if (position.x < 0) 
+            position.x = 0;
+        if (position.x > GamePanel.WIDTH - width) 
+            position.x = GamePanel.WIDTH - width;
     }
     
     public void expand() {

@@ -40,5 +40,7 @@ public abstract class PowerUp extends GameObject {
     }
     
     @Override
-    public void onCollision(Collidable other) {}
+    public void onCollision(Collidable other) {
+        
+    }
 }

@@ -12,15 +12,19 @@ import breakout.manager.SoundManager;
 
 public final class CollisionDetector {
 
-    private CollisionDetector() {}
+    private CollisionDetector() {
+
+    }
 
     public static boolean isColliding(Collidable a, Collidable b) {
-        if (a == null || b == null) return false;
+        if (a == null || b == null) 
+            return false;
         return a.getBounds().intersects(b.getBounds());
     }
 
     public static void handleWallCollision(Ball ball, int minX, int minY, int maxX, int maxY, SoundManager soundManager) {
-        if (ball == null) return;
+        if (ball == null) 
+            return;
 
         double x = ball.getPosition().x;
         double y = ball.getPosition().y;
@@ -55,8 +59,10 @@ public final class CollisionDetector {
      }
 
     public static void handlePaddleCollision(Ball ball, Paddle paddle) {
-        if (ball == null || paddle == null) return;
-        if (!isColliding(ball, paddle)) return;
+        if (ball == null || paddle == null) 
+            return;
+        if (!isColliding(ball, paddle)) 
+            return;
 
         Rectangle b = ball.getBounds();
         Rectangle p = paddle.getBounds();
@@ -98,8 +104,10 @@ public final class CollisionDetector {
                     v.x = speed * (offset + slope * 0.5);
                     
                     // 최대 속도 제한
-                    if (v.x > speed * 0.95) v.x = speed * 0.95;
-                    if (v.x < -speed * 0.95) v.x = -speed * 0.95;
+                    if (v.x > speed * 0.95)
+                         v.x = speed * 0.95;
+                    if (v.x < -speed * 0.95) 
+                        v.x = -speed * 0.95;
                     
                     v.y = -Math.sqrt(Math.abs(speed*speed - v.x*v.x));
                     break;
@@ -115,9 +123,11 @@ public final class CollisionDetector {
     }
 
     public static void handleBrickCollisions(Ball ball, List<? extends Brick> bricks) {
-        if (ball == null || bricks == null) return;
+        if (ball == null || bricks == null) 
+            return;
         for (Brick brick : bricks) {
-            if (brick == null || brick.isDestroyed) continue;
+            if (brick == null || brick.isDestroyed) 
+                continue;
             if (isColliding(ball, brick)) {
                 resolveBallVsRect(ball, brick);
                 brick.hit();
@@ -128,10 +138,12 @@ public final class CollisionDetector {
     }
 
     public static void resolveBallVsRect(Ball ball, GameObject rect) {
-        if (ball == null || rect == null) return;
+        if (ball == null || rect == null) 
+            return;
         Rectangle b = ball.getBounds();
         Rectangle r = rect.getBounds();
-        if (!b.intersects(r)) return; 
+        if (!b.intersects(r)) 
+            return; 
 
         Vector2D v = ball.getVelocity();
         double overlapLeft   = b.getMaxX() - r.getMinX();
@@ -141,9 +153,17 @@ public final class CollisionDetector {
 
         double minOverlap = Math.min(Math.min(overlapLeft, overlapRight), Math.min(overlapTop, overlapBottom));
 
-        if (minOverlap == overlapLeft) { ball.getPosition().x -= overlapLeft; v.x = -Math.abs(v.x); }
-        else if (minOverlap == overlapRight) { ball.getPosition().x += overlapRight; v.x = Math.abs(v.x); }
-        else if (minOverlap == overlapTop) { ball.getPosition().y -= overlapTop; v.y = -Math.abs(v.y); }
-        else { ball.getPosition().y += overlapBottom; v.y = Math.abs(v.y); }
+        if (minOverlap == overlapLeft) {
+             ball.getPosition().x -= overlapLeft; v.x = -Math.abs(v.x); 
+            }
+        else if (minOverlap == overlapRight) {
+             ball.getPosition().x += overlapRight; v.x = Math.abs(v.x); 
+            }
+        else if (minOverlap == overlapTop) { 
+            ball.getPosition().y -= overlapTop; v.y = -Math.abs(v.y);
+         }
+        else {
+             ball.getPosition().y += overlapBottom; v.y = Math.abs(v.y);
+             }
     }
 }
