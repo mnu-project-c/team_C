@@ -275,7 +275,7 @@ public class GamePanel extends JPanel implements Runnable {
         }
     }
 
-    private void update() {
+        private void update() {
         if (isFading) {
             if (isFadeOut) {
                 fadeAlpha += FADE_SPEED;
@@ -323,7 +323,9 @@ public class GamePanel extends JPanel implements Runnable {
                     break;
                 case STATE_EDITOR: updateEditor(); break;
                 case STATE_LEADERBOARD:
-                    if (leaderboardPanel != null && leaderboardPanel.update(mouseHandler)) transitionTo(STATE_USER_CUSTOM);
+                    if (leaderboardPanel != null && leaderboardPanel.update(mouseHandler)) {
+                        transitionTo(previousState);
+                    }
                     break;
                 case STATE_ACHIEVEMENTS:
                     achBackButton.update(mouseHandler);
@@ -333,7 +335,10 @@ public class GamePanel extends JPanel implements Runnable {
                     if (nameModal != null) {
                         nameModal.update(mouseHandler, soundManager);
                         if (nameModal.isFinished()) {
-                            if (!nameModal.isCancelled()) scoreManager.addScore(nameModal.getInputName(), score);
+                            if (!nameModal.isCancelled()) {
+                                scoreManager.addScore(nameModal.getInputName(), score);
+                            }
+                            previousState = STATE_MENU;
                             transitionTo(STATE_LEADERBOARD);
                             nameModal = null;
                         }
@@ -342,6 +347,8 @@ public class GamePanel extends JPanel implements Runnable {
             }
         }
     }
+
+    
 
     private void updateMenu() {
         startButton.update(mouseHandler); userCustomButton.update(mouseHandler);
